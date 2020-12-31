@@ -9,24 +9,60 @@
 #include <set>
 #include <vector>
 
-/****************************InvalidArgException***********************************/
-
 class InvalidArg : public std::exception {
 public:
-    explicit InvalidArg(const char *msg) : errorMsg_(msg) {}
+    explicit InvalidArg(const char *message) : errorMessage(message) {}
 
     virtual const char *what() const noexcept {
-        return errorMsg_;
+        return errorMessage;
     }
 
 private:
-    const char *errorMsg_;
+    const char *errorMessage;
 };
 
 template<typename A, typename V>
 class FunctionMaxima {
 public:
-    class point_type;
+    class point_type {
+    public:
+        A const &arg() const {
+            return argument;
+        }
+
+        V const &value() const {
+            return point;
+        }
+
+        /**
+         * TODO: Fix the operator
+         * Note: The comparing operator may throw an exception.
+         *
+         * @param rhs
+         * @return
+         */
+        bool operator<(const FunctionMaxima<A, V>::point_type &rhs) const {
+            return (this->argument < rhs.argument);
+//            || (!(this->argument < rhs.argument) && !(rhs.argument < this->argument) && this->point < rhs.point);
+        }
+
+        point_type(const point_type &rhs) : argument(rhs.argument), point(rhs.point) {
+        }
+
+        point_type(point_type &&rhs) noexcept: argument(std::move(rhs.argument)), point(std::move(rhs.point)) {
+        }
+
+        /**
+         * TODO: Hide the constructor from outer world
+         * @param argument
+         * @param point
+         */
+        point_type(A argument, V point) : argument(argument), point(point) {}
+
+    private:
+        A argument;
+        V point;
+    };
 
     using size_type = std::size_t;
 
@@ -42,7 +78,7 @@ public:
      * Move constructor
      */
     FunctionMaxima(FunctionMaxima<A, V> &&rhs) noexcept: pointSet(std::move(rhs.pointSet)) {
-        pointSet = nullptr;
+        rhs.pointSet = nullptr;
     }
 
     /**
@@ -70,9 +106,7 @@ public:
         return pointSet.end();
     }
 
-    // TODO:
     typename std::set<point_type>::iterator find(A const &a) const {
-        return;
     }
 
     size_type size() const {
@@ -94,12 +128,23 @@ private:
  */
 template<typename A, typename V>
 V const &FunctionMaxima<A, V>::value_at(const A &a) const {
+    V v;
+    FunctionMaxima<A, V>::point_type toSearch = {a, v};
+    auto it = pointSet.find(toSearch);
+
+    if (it == pointSet.end()) {
+        throw InvalidArg("The argument is not in the range of the domain.");
+    }
+
+    return ((FunctionMaxima<A, V>::point_type) *it).value();
 }
 
 /**
  * The function will update the value of the existing key.
  * If the key does not exist in the map, then it will be inserted
  * with the value assigned to it.
+ *
+ * Note: The function first erases element by key and the inserts the new one.
  *
  * TODO: It may add local maximum in the set of maxima values.
  *
@@ -110,11 +155,14 @@ V const &FunctionMaxima<A, V>::value_at(const A &a) const {
  */
 template<typename A, typename V>
 void FunctionMaxima<A, V>::set_value(const A &a, const V &v) {
+    erase(a);
+    FunctionMaxima<A, V>::point_type toInsert = {a, v};
+    pointSet.insert(toInsert);
 }
 
 /**
  * The function erases the element given by the key.
- * Note that if the element is a pointer then the pointed-to memory will not be touched.
+ * Note that if the element is a point then the pointed-to memory will not be touched.
  *
  * TODO: It may erase local maximum in the set of maxima values.
  *
@@ -124,43 +172,9 @@ void FunctionMaxima<A, V>::set_value(const A &a, const V &v) {
  */
 template<typename A, typename V>
 void FunctionMaxima<A, V>::erase(const A &a) {
+    V v;
+    FunctionMaxima<A, V>::point_type toRemove = {a, v};
+    pointSet.erase(toRemove);
 }
-
-/****************************POINTER_TYPE***********************************/
-
-template<typename A, typename V>
-class FunctionMaxima<A, V>::point_type {
-public:
-    point_type(A argument, V point) : argument(argument), point(point) {}
-
-    A const &arg() const {
-        return argument;
-    }
-
-    V const &value() const {
-        return point;
-    }
-
-    /**
-     *
-     * Note: The comparing operator may throw an exception.
-     *
-     * @param rhs
-     * @return
-     */
-    bool operator<(const FunctionMaxima<A, V>::point_type &rhs) {
-        return this->argument < rhs.argument;
-    }
-
-    point_type(const point_type &rhs) : argument(rhs.argument), point(rhs.point) {
-    }
-
-    point_type(point_type &&rhs) noexcept: argument(std::move(rhs.argument)), point(std::move(rhs.point)) {
-    }
-
-private:
-    A argument;
-    V point;
-};
 
 #endif //MAXIMA_FUNCTION_MAXIMA_H

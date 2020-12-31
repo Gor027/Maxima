@@ -1,49 +1,29 @@
 #include "function_maxima.h"
 
 #include "iostream"
-#include <set>
-
-class Fun {
-    int x;
-    int y;
-
-public:
-
-    Fun(int x, int y) : x(x), y(y) {}
-
-    inline bool operator<(const Fun &rhs) const {
-        return this->x < rhs.x;
-    }
-
-    int getX() const {
-        return x;
-    }
-
-    int getY() const {
-        return y;
-    }
-};
-
 
 int main() {
-//    std::set<Fun> mySet;
-//
-//    mySet.insert(Fun(5, 1));
-//    mySet.insert(Fun(6, 2));
-//    mySet.insert(Fun(7, 3));
-//    mySet.insert(Fun(8, 4));
-//    mySet.insert(Fun(9, 5));
-//
-//    auto it = mySet.find(Fun(8, 0));
-//
-//    std::cout << "Element's key is: " << it->getX() << " and value is: " << it->getY() << std::endl;
-
     FunctionMaxima<int, int> F;
+
+    // check sets
     F.set_value(5, 1);
-    F.set_value(5, 2);
-    F.set_value(5, 3);
-    F.set_value(5, 4);
-    F.set_value(5, 5);
+    F.set_value(6, 2);
+    F.set_value(4, 3);
+    F.set_value(3, 4);
+    F.set_value(2, 5);
+
+    // check find
+    std::cout << F.value_at(3) << std::endl;
+
+    // check find and update
+    std::cout << F.value_at(5) << std::endl;
+    F.set_value(5, 7);
+
+    // check erase
+    F.erase(2);
+    F.erase(3);
+
+    // actual output
     for (const auto &p : F) {
         std::cout << p.arg() << " -> " << p.value() << std::endl;
     }
