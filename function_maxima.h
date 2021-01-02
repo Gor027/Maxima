@@ -5,9 +5,15 @@
 #ifndef MAXIMA_FUNCTION_MAXIMA_H
 #define MAXIMA_FUNCTION_MAXIMA_H
 
+#include "iostream"
 #include <map>
 #include <set>
 #include <vector>
+#include <memory>
+#include "experimental/propagate_const"
+#include "iterator"
+
+/*********************************INVALID_ARG*********************************/
 
 class InvalidArg : public std::exception {
 public:
@@ -21,76 +27,74 @@ private:
     const char *errorMessage;
 };
 
+/*********************************FUNCTION_MAXIMA*********************************/
+
 template<typename A, typename V>
 class FunctionMaxima {
 public:
-    class point_type {
-    public:
-        A const &arg() const {
-            return argument;
-        }
-
-        V const &value() const {
-            return point;
-        }
-
-        /**
-         * TODO: Fix the operator
-         * Note: The comparing operator may throw an exception.
-         *
-         * @param rhs
-         * @return
-         */
-        bool operator<(const FunctionMaxima<A, V>::point_type &rhs) const {
-            return (this->argument < rhs.argument);
-//            || (!(this->argument < rhs.argument) && !(rhs.argument < this->argument) && this->point < rhs.point);
-        }
-
-        point_type(const point_type &rhs) : argument(rhs.argument), point(rhs.point) {
-        }
-
-        point_type(point_type &&rhs) noexcept: argument(std::move(rhs.argument)), point(std::move(rhs.point)) {
-        }
-
-        /**
-         * TODO: Hide the constructor from outer world
-         * @param argument
-         * @param point
-         */
-        point_type(A argument, V point) : argument(argument), point(point) {}
-
-    private:
-        A argument;
-        V point;
-    };
+    class point_type;
 
     using size_type = std::size_t;
 
-    explicit FunctionMaxima() = default;
+    class iterator {
+    public:
+        using iterator_category = std::bidirectional_iterator_tag;
+        using difference_type = std::ptrdiff_t;
+        using value_type = point_type;
+        using pointer = point_type *;
+        using reference = point_type;
+
+        iterator(const typename std::set<point_type>::iterator &ptr) : ptr(ptr) {}
+
+        reference operator*() const { return *ptr; }
+
+        pointer operator->() { return ptr; }
+
+        iterator &operator++() {
+            ptr++;
+
+            return *this;
+        }
+
+        iterator operator++(int) {
+            iterator tmp = *this;
+            ++(*this);
+
+            return tmp;
+        }
+
+        friend bool operator==(const iterator &a, const iterator &b) {
+            return a.ptr == b.ptr;
+        }
+
+        friend bool operator!=(const iterator &a, const iterator &b) {
+            return a.ptr != b.ptr;
+        }
+
+    private:
+        typename std::set<point_type>::iterator ptr;
+    };
+
+    explicit FunctionMaxima();
 
     /**
      * Copy constructor
      */
-    FunctionMaxima(const FunctionMaxima<A, V> &rhs) : pointSet(rhs.pointSet) {
-    }
+    FunctionMaxima(const FunctionMaxima<A, V> &rhs) = default;
 
     /**
      * Move constructor
      */
-    FunctionMaxima(FunctionMaxima<A, V> &&rhs) noexcept: pointSet(std::move(rhs.pointSet)) {
-        rhs.pointSet = nullptr;
-    }
+    FunctionMaxima(FunctionMaxima<A, V> &&rhs) noexcept = default;
 
     /**
      * Overloaded assignment operator
      */
-    FunctionMaxima &operator=(FunctionMaxima &&rhs) noexcept {
-        pointSet = std::move(rhs.pointSet);
-
-        return *this;
-    }
+    FunctionMaxima &operator=(FunctionMaxima &&rhs) noexcept = default;
 
     ~FunctionMaxima() = default;
+
+    /***********GOES_INTO_IMPL***********/
 
     V const &value_at(A const &a) const;
 
@@ -98,24 +102,131 @@ public:
 
     void erase(A const &a);
 
-    typename std::set<point_type>::iterator begin() const {
+    iterator begin() const;
+
+    iterator end() const;
+
+    iterator find(A const &a) const;
+
+    size_type size() const;
+
+private:
+    class Impl;
+
+    std::unique_ptr<Impl> pImpl;
+};
+
+/*********************************POINT_TYPE*********************************/
+
+template<typename A, typename V>
+class FunctionMaxima<A, V>::point_type {
+public:
+    A const &arg() const {
+        return argument;
+    }
+
+    V const &value() const {
+        return point;
+    }
+
+    point_type(const point_type &rhs) : argument(rhs.argument), point(rhs.point) {
+    }
+
+    point_type(point_type &&rhs) noexcept: argument(std::move(rhs.argument)), point(std::move(rhs.point)) {
+    }
+
+private:
+    /**
+     * Impl class will have access to the private parametrized constructor of point_type
+     */
+    friend class FunctionMaxima<A, V>::Impl;
+
+    point_type(A argument, V point) : argument(argument), point(point) {}
+
+    A argument;
+    V point;
+};
+
+/*********************************FUNCTION_MAXIMA_IMPL*********************************/
+
+template<typename A, typename V>
+class FunctionMaxima<A, V>::Impl {
+public:
+    Impl() = default;
+
+    /**
+     * TODO: This must be changed
+     */
+    V const &value_at(const A &a) const {
+        V v;
+        point_type toSearch = {a, v};
+
+        auto it = pointSet.find(toSearch);
+
+        if (it == pointSet.end()) {
+            throw InvalidArg("The argument is out of the domain.");
+        }
+
+        return ((point_type) *it).value();
+    }
+
+    void set_value(const A &a, const V &v) {
+        erase(a);
+        point_type toInsert = {a, v};
+
+        pointSet.insert(toInsert);
+    }
+
+    /**
+     * TODO: This must be changed
+     */
+    void erase(const A &a) {
+        V v;
+        point_type toRemove = {a, v};
+
+        pointSet.erase(toRemove);
+    }
+
+    FunctionMaxima<A, V>::iterator begin() const {
         return pointSet.begin();
     }
 
-    typename std::set<point_type>::iterator end() const {
+    FunctionMaxima<A, V>::iterator end() const {
         return pointSet.end();
     }
 
-    typename std::set<point_type>::iterator find(A const &a) const {
+    FunctionMaxima<A, V>::iterator find(A const &a) const {
+        V v;
+        point_type toSearch = {a, v};
+
+        return pointSet.find(toSearch);
     }
 
     size_type size() const {
         return pointSet.size();
     }
 
+
 private:
-    std::set<point_type> pointSet;
+    struct pointSetCmp {
+        bool operator()(point_type a, point_type b) const {
+            return a.argument < b.argument;
+        }
+    };
+
+    std::set<point_type, pointSetCmp> pointSet;
+    std::set<point_type> maximaPointSet;
 };
+
+/**
+ * No-parameter constructor for FunctionMaxima
+ *
+ * @tparam A - type of the domain values
+ * @tparam V - type of the range values
+ */
+template<typename A, typename V>
+FunctionMaxima<A, V>::FunctionMaxima() : pImpl{std::make_unique<Impl>()} {
+}
 
 /**
  * The function will look up for the key in the map.
@@ -128,15 +239,7 @@ private:
  */
 template<typename A, typename V>
 V const &FunctionMaxima<A, V>::value_at(const A &a) const {
-    V v;
-    FunctionMaxima<A, V>::point_type toSearch = {a, v};
-    auto it = pointSet.find(toSearch);
-
-    if (it == pointSet.end()) {
-        throw InvalidArg("The argument is not in the range of the domain.");
-    }
-
-    return ((FunctionMaxima<A, V>::point_type) *it).value();
+    return pImpl->value_at(a);
 }
 
 /**
@@ -155,9 +258,7 @@ V const &FunctionMaxima<A, V>::value_at(const A &a) const {
  */
 template<typename A, typename V>
 void FunctionMaxima<A, V>::set_value(const A &a, const V &v) {
-    erase(a);
-    FunctionMaxima<A, V>::point_type toInsert = {a, v};
-    pointSet.insert(toInsert);
+    return pImpl->set_value(a, v);
 }
 
 /**
@@ -172,9 +273,27 @@ void FunctionMaxima<A, V>::set_value(const A &a, const V &v) {
  */
 template<typename A, typename V>
 void FunctionMaxima<A, V>::erase(const A &a) {
-    V v;
-    FunctionMaxima<A, V>::point_type toRemove = {a, v};
-    pointSet.erase(toRemove);
+    return pImpl->erase(a);
+}
+
+template<typename A, typename V>
+typename FunctionMaxima<A, V>::iterator FunctionMaxima<A, V>::begin() const {
+    return pImpl->begin();
+}
+
+template<typename A, typename V>
+typename FunctionMaxima<A, V>::iterator FunctionMaxima<A, V>::end() const {
+    return pImpl->end();
+}
+
+template<typename A, typename V>
+typename FunctionMaxima<A, V>::iterator FunctionMaxima<A, V>::find(const A &a) const {
+    return pImpl->find(a);
+}
+
+template<typename A, typename V>
+typename FunctionMaxima<A, V>::size_type FunctionMaxima<A, V>::size() const {
+    return pImpl->size();
 }
 
 #endif //MAXIMA_FUNCTION_MAXIMA_H
