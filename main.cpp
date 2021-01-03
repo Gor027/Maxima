@@ -17,7 +17,7 @@ int main() {
 
     // check find and update
     std::cout << F.value_at(5) << std::endl;
-    F.set_value(5, 7);
+    F.set_value(5, 8);
     std::cout << F.value_at(5) << std::endl;
 
     // check erase
@@ -30,6 +30,18 @@ int main() {
     // actual output
     for (const auto &p : F) {
         std::cout << p.arg() << " -> " << p.value() << std::endl;
+    }
+
+    for(auto it = F.mx_begin(); it != F.mx_end(); ++it) {
+        std::cout << it->arg() << " -> " << it->value() << std::endl;
+    }
+
+    F.set_value(5, 1);
+
+    std::cout<<"second time"<<std::endl;
+
+    for(auto it = F.mx_begin(); it != F.mx_end(); ++it) {
+        std::cout << it->arg() << " -> " << it->value() << std::endl;
     }
 
     return 0;
