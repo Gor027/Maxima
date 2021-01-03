@@ -6,6 +6,6 @@ set(CMAKE_CXX_STANDARD 17)
 add_executable(
         Maxima
         function_maxima.h
-        main.cpp
-#        example.cpp
+#        main.cpp
+        example.cpp
 )

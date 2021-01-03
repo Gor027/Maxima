@@ -199,8 +199,8 @@ private:
         auto tempGreater = it;
         tempGreater++;
 
-        return (it == pointSet.begin() || tempLesser->value() <= it->value()) &&
-               (tempGreater == pointSet.end() || tempGreater->value() <= it->value());
+        return (it == pointSet.begin() || tempLesser->value() < it->value() || (!(tempLesser->value() < it->value()) && !(it->value() < tempLesser->value()))) &&
+               (tempGreater == pointSet.end() || tempGreater->value() < it->value() || (!(tempGreater->value() < it->value()) && !(it->value() < tempGreater->value())));
     }
 
     // use this function before inserting point_type to pointSet
@@ -253,8 +253,11 @@ private:
 
     struct maximaPointSetCmp {
         bool operator()(point_type a, point_type b) const {
-            return a.value() > b.value() ||
-                   (a.value() == b.value() && a.arg() < b.arg());
+            return (
+                    (b.value() < a.value()) ||
+                    ((!(a.value() < b.value()) && !(b.value() < a.value())) &&
+                     (a.arg() < b.arg()))
+            );
         }
     };
 
