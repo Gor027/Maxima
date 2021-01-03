@@ -123,9 +123,4 @@ int main() {
     }
     assert(counter == 2 * N - 1);
     big = fun;
-
-    FunctionMaxima<int, int> F;
-    for (const auto &p : F) {
-        std::cout << p.arg() << " -> " << p.value() << std::endl;
-    }
 }

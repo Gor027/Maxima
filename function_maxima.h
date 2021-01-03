@@ -1,7 +1,3 @@
-//
-// Created by gor027 on 15.12.2020.
-//
-
 #ifndef MAXIMA_FUNCTION_MAXIMA_H
 #define MAXIMA_FUNCTION_MAXIMA_H
 
@@ -42,20 +38,20 @@ public:
     explicit FunctionMaxima();
 
     /**
-     * Copy constructor
+     * Copy constructors
      */
-    FunctionMaxima(const FunctionMaxima<A, V> &rhs) = default;
+    FunctionMaxima(const FunctionMaxima<A, V> &rhs) : pImpl(std::make_unique<Impl>(*rhs.pImpl)) {
+    }
+
+    FunctionMaxima &operator=(const FunctionMaxima &rhs) {
+        pImpl = std::make_unique<Impl>(*rhs.pImpl);
+
+        return *this;
+    }
 
     /**
-     * Move constructor
+     * Destructor
      */
-    FunctionMaxima(FunctionMaxima<A, V> &&rhs) noexcept = default;
-
-    /**
-     * Overloaded assignment operator
-     */
-    FunctionMaxima &operator=(FunctionMaxima &&rhs) noexcept = default;
-
     ~FunctionMaxima() = default;
 
     /***********GOES_INTO_IMPL***********/
@@ -159,8 +155,7 @@ public:
 
         if (it != pointSet.begin()) {
             temp = --it;
-        }
-        else {
+        } else {
             temp = ++it;
         }
 
@@ -196,17 +191,16 @@ public:
         return pointSet.size();
     }
 
-
 private:
 
-    bool shouldBeMaximum(iterator it) {
+    bool shouldBeMaximum(iterator it) const {
         auto tempLesser = it;
         tempLesser--;
         auto tempGreater = it;
         tempGreater++;
 
         return (it == pointSet.begin() || tempLesser->value() <= it->value()) &&
-                (tempGreater == pointSet.end() || tempGreater->value() <= it->value());
+               (tempGreater == pointSet.end() || tempGreater->value() <= it->value());
     }
 
     // use this function before inserting point_type to pointSet
@@ -260,7 +254,7 @@ private:
     struct maximaPointSetCmp {
         bool operator()(point_type a, point_type b) const {
             return a.value() > b.value() ||
-                (a.value() == b.value() && a.arg() < b.arg());
+                   (a.value() == b.value() && a.arg() < b.arg());
         }
     };
 
@@ -299,8 +293,6 @@ V const &FunctionMaxima<A, V>::value_at(const A &a) const {
  *
  * Note: The function first erases element by key and the inserts the new one.
  *
- * TODO: It may add local maximum in the set of maxima values.
- *
  * @tparam A - type of the domain values
  * @tparam V - type of the range values
  * @param a - const reference to the key to be updated
@@ -314,8 +306,6 @@ void FunctionMaxima<A, V>::set_value(const A &a, const V &v) {
 /**
  * The function erases the element given by the key.
  * Note that if the element is a point then the pointed-to memory will not be touched.
- *
- * TODO: It may erase local maximum in the set of maxima values.
  *
  * @tparam A - type of the domain values
  * @tparam V - type of the range values

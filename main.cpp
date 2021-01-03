@@ -44,5 +44,14 @@ int main() {
         std::cout << it->arg() << " -> " << it->value() << std::endl;
     }
 
+    FunctionMaxima<int, int> big;
+
+    std::cout << "Assignment checking" << std::endl;
+
+    big = F;
+    for(auto it = big.mx_begin(); it != big.mx_end(); ++it) {
+        std::cout << it->arg() << " -> " << it->value() << std::endl;
+    }
+
     return 0;
 }
