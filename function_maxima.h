@@ -36,44 +36,8 @@ public:
 
     using size_type = std::size_t;
 
-    class iterator {
-    public:
-        using iterator_category = std::bidirectional_iterator_tag;
-        using difference_type = std::ptrdiff_t;
-        using value_type = point_type;
-        using pointer = point_type *;
-        using reference = point_type;
-
-        iterator(const typename std::set<point_type>::iterator &ptr) : ptr(ptr) {}
-
-        reference operator*() const { return *ptr; }
-
-        pointer operator->() { return ptr; }
-
-        iterator &operator++() {
-            ptr++;
-
-            return *this;
-        }
-
-        iterator operator++(int) {
-            iterator tmp = *this;
-            ++(*this);
-
-            return tmp;
-        }
-
-        friend bool operator==(const iterator &a, const iterator &b) {
-            return a.ptr == b.ptr;
-        }
-
-        friend bool operator!=(const iterator &a, const iterator &b) {
-            return a.ptr != b.ptr;
-        }
-
-    private:
-        typename std::set<point_type>::iterator ptr;
-    };
+    using iterator = typename std::set<point_type>::iterator;
+    using mx_iterator = typename std::set<point_type>::iterator;
 
     explicit FunctionMaxima();
 
@@ -108,6 +72,10 @@ public:
 
     iterator find(A const &a) const;
 
+    mx_iterator mx_begin() const;
+
+    mx_iterator mx_end() const;
+
     size_type size() const;
 
 private:
@@ -122,18 +90,16 @@ template<typename A, typename V>
 class FunctionMaxima<A, V>::point_type {
 public:
     A const &arg() const {
-        return argument;
+        return *argument.get();
     }
 
     V const &value() const {
-        return point;
+        return *point.get();
     }
 
-    point_type(const point_type &rhs) : argument(rhs.argument), point(rhs.point) {
-    }
+    point_type(const point_type &rhs) = default;
 
-    point_type(point_type &&rhs) noexcept: argument(std::move(rhs.argument)), point(std::move(rhs.point)) {
-    }
+    point_type(point_type &&rhs) noexcept = default;
 
 private:
     /**
@@ -141,10 +107,12 @@ private:
      */
     friend class FunctionMaxima<A, V>::Impl;
 
-    point_type(A argument, V point) : argument(argument), point(point) {}
+    point_type(A argument, V point) : argument(std::make_shared<A>(argument)), point(std::make_shared<V>(point)) {}
 
-    A argument;
-    V point;
+    point_type(A argument) : argument(std::make_shared<A>(argument)), point(nullptr) {}
+
+    std::shared_ptr<A> argument;
+    std::shared_ptr<V> point;
 };
 
 /*********************************FUNCTION_MAXIMA_IMPL*********************************/
@@ -154,12 +122,8 @@ class FunctionMaxima<A, V>::Impl {
 public:
     Impl() = default;
 
-    /**
-     * TODO: This must be changed
-     */
     V const &value_at(const A &a) const {
-        V v;
-        point_type toSearch = {a, v};
+        point_type toSearch = {a};
 
         auto it = pointSet.find(toSearch);
 
@@ -171,20 +135,39 @@ public:
     }
 
     void set_value(const A &a, const V &v) {
-        erase(a);
         point_type toInsert = {a, v};
 
-        pointSet.insert(toInsert);
+        auto prevPointIt = pointSet.find(a);
+        eraseAdjoinMaxima(prevPointIt);
+
+        erase(a);
+
+        auto currentPointIt = pointSet.insert(toInsert).first;
+        eraseAdjoinMaxima(currentPointIt);
+        addAdjoinMaxima(currentPointIt);
     }
 
-    /**
-     * TODO: This must be changed
-     */
     void erase(const A &a) {
-        V v;
-        point_type toRemove = {a, v};
+        point_type toRemove = {a};
+        auto it = pointSet.find(toRemove);
+
+        if (it == pointSet.end()) {
+            return;
+        }
+
+        iterator temp;
+
+        if (it != pointSet.begin()) {
+            temp = --it;
+        }
+        else {
+            temp = ++it;
+        }
 
         pointSet.erase(toRemove);
+
+        eraseAdjoinMaxima(temp);
+        addAdjoinMaxima(temp);
     }
 
     FunctionMaxima<A, V>::iterator begin() const {
@@ -196,10 +179,17 @@ public:
     }
 
     FunctionMaxima<A, V>::iterator find(A const &a) const {
-        V v;
-        point_type toSearch = {a, v};
+        point_type toSearch = {a};
 
         return pointSet.find(toSearch);
+    }
+
+    FunctionMaxima<A, V>::mx_iterator mx_begin() const {
+        return maximaPointSet.begin();
+    }
+
+    FunctionMaxima<A, V>::mx_iterator mx_end() const {
+        return maximaPointSet.end();
     }
 
     size_type size() const {
@@ -208,14 +198,74 @@ public:
 
 
 private:
+
+    bool shouldBeMaximum(iterator it) {
+        auto tempLesser = it;
+        tempLesser--;
+        auto tempGreater = it;
+        tempGreater++;
+
+        return (it == pointSet.begin() || tempLesser->value() <= it->value()) &&
+                (tempGreater == pointSet.end() || tempGreater->value() <= it->value());
+    }
+
+    // use this function before inserting point_type to pointSet
+    void eraseAdjoinMaxima(iterator it) {
+        if (it == pointSet.end()) {
+            return;
+        }
+
+        auto tempLesser = it;
+        tempLesser--;
+        auto tempGreater = it;
+        tempGreater++;
+
+        if (it != pointSet.begin()) {
+            maximaPointSet.erase(*tempLesser);
+        }
+
+        maximaPointSet.erase(*it);
+
+        if (tempGreater != pointSet.end()) {
+            maximaPointSet.erase(*tempGreater);
+        }
+    }
+
+    // use this function after inserting point_type to pointSet
+    void addAdjoinMaxima(iterator it) {
+        auto tempLesser = it;
+        tempLesser--;
+        auto tempGreater = it;
+        tempGreater++;
+
+        if (it != pointSet.begin() && shouldBeMaximum(tempLesser)) {
+            maximaPointSet.insert(*tempLesser);
+        }
+
+        if (shouldBeMaximum(it)) {
+            maximaPointSet.insert(*it);
+        }
+
+        if (tempGreater != pointSet.end() && shouldBeMaximum(tempGreater)) {
+            maximaPointSet.insert(*tempGreater);
+        }
+    }
+
     struct pointSetCmp {
         bool operator()(point_type a, point_type b) const {
-            return a.argument < b.argument;
+            return a.arg() < b.arg();
+        }
+    };
+
+    struct maximaPointSetCmp {
+        bool operator()(point_type a, point_type b) const {
+            return a.value() > b.value() ||
+                (a.value() == b.value() && a.arg() < b.arg());
         }
     };
 
     std::set<point_type, pointSetCmp> pointSet;
-    std::set<point_type> maximaPointSet;
+    std::set<point_type, maximaPointSetCmp> maximaPointSet;
 };
 
 /**
@@ -289,6 +339,16 @@ typename FunctionMaxima<A, V>::iterator FunctionMaxima<A, V>::end() const {
 template<typename A, typename V>
 typename FunctionMaxima<A, V>::iterator FunctionMaxima<A, V>::find(const A &a) const {
     return pImpl->find(a);
+}
+
+template<typename A, typename V>
+typename FunctionMaxima<A, V>::mx_iterator FunctionMaxima<A, V>::mx_begin() const {
+    return pImpl->mx_begin();
+}
+
+template<typename A, typename V>
+typename FunctionMaxima<A, V>::mx_iterator FunctionMaxima<A, V>::mx_end() const {
+    return pImpl->mx_end();
 }
 
 template<typename A, typename V>
