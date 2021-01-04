@@ -182,6 +182,8 @@ public:
             if (insertion && surrounding[newMiddle] != pointSet.end()) {
                 pointSet.erase(surrounding[newMiddle]);
             }
+            
+            throw;
         }
 
         for (size_t i = 0; i < success.size(); i++) {
@@ -232,6 +234,8 @@ public:
                     maximaPointSet.erase(rollback[i]);
                 }
             }
+            
+            throw;
         }
 
         for (size_t i = 0; i < success.size(); i++) {
