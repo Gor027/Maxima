@@ -131,38 +131,118 @@ public:
     }
 
     void set_value(const A &a, const V &v) {
-        point_type toInsert = {a, v};
+        std::vector<mx_iterator> success;
+        std::vector<mx_iterator> rollback;
+        std::vector<iterator> surrounding;
+        bool insertion = false;
+        success.reserve(requiredSpace);
+        rollback.reserve(requiredSpace);
+        surrounding.reserve(requiredSpace);
 
-        auto prevPointIt = pointSet.find(a);
-        eraseAdjoinMaxima(prevPointIt);
+        try {
+            point_type toInsert = {a, v};
 
-        erase(a);
+            surrounding.push_back(pointSet.find(toInsert));
 
-        auto currentPointIt = pointSet.insert(toInsert).first;
-        eraseAdjoinMaxima(currentPointIt);
-        addAdjoinMaxima(currentPointIt);
+            if (surrounding[prevMiddle] == pointSet.end()) {
+                surrounding.push_back(pointSet.insert(toInsert));
+                insertion = true;
+                surrounding.push_back(moveItLeft(surrounding[newMiddle]));
+                surrounding.push_back(moveItRight(surrounding[newMiddle]));
+            }
+            else {
+                surrounding.push_back(surrounding[prevMiddle]);
+                surrounding.push_back(moveItLeft(surrounding[prevMiddle]));
+                surrounding.push_back(moveItRight(surrounding[prevMiddle]));
+                surrounding[newMiddle] = pointSet.insert(toInsert);
+                insertion = true;
+            }
+
+            surrounding.push_back(moveItLeft(surrounding[left]));
+            surrounding.push_back(moveItRight(surrounding[right]));
+
+            updateMaximum(surrounding[leftmost], surrounding[left], surrounding[newMiddle],
+                          success, rollback);
+            updateMaximum(surrounding[newMiddle], surrounding[right], surrounding[rightmost],
+                          success, rollback);
+            updateMaximum(surrounding[left], surrounding[newMiddle], surrounding[right],
+                          success, rollback);
+
+            if (surrounding[prevMiddle] != pointSet.end()) {
+                success.push_back(maximaPointSet.find(*surrounding[prevMiddle]));
+            }
+        }
+        catch(...) {
+            for (size_t i = 0; i < rollback.size(); i++) {
+                if (rollback[i] != maximaPointSet.end()) {
+                    maximaPointSet.erase(rollback[i]);
+                }
+            }
+
+            if (insertion && surrounding[newMiddle] != pointSet.end()) {
+                pointSet.erase(surrounding[newMiddle]);
+            }
+        }
+
+        for (size_t i = 0; i < success.size(); i++) {
+            if (success[i] != maximaPointSet.end()) {
+                maximaPointSet.erase(success[i]);
+            }
+        }
+
+        if (surrounding[prevMiddle] != pointSet.end()) {
+            pointSet.erase(surrounding[prevMiddle]);
+        }
     }
 
     void erase(const A &a) {
-        point_type toRemove = {a};
-        auto it = pointSet.find(toRemove);
+        std::vector<mx_iterator> success;
+        std::vector<mx_iterator> rollback;
+        std::vector<iterator> surrounding;
+        success.reserve(requiredSpace);
+        rollback.reserve(requiredSpace);
+        surrounding.reserve(requiredSpace);
 
-        if (it == pointSet.end()) {
-            return;
+        try {
+            point_type toRemove = {a};
+            surrounding.push_back(pointSet.find(toRemove));
+            surrounding.push_back(pointSet.find(toRemove));
+
+            if (surrounding[prevMiddle] == pointSet.end()) {
+                return;
+            }
+
+            surrounding.push_back(moveItLeft(surrounding[prevMiddle]));
+            surrounding.push_back(moveItRight(surrounding[prevMiddle]));
+            surrounding.push_back(moveItLeft(surrounding[left]));
+            surrounding.push_back(moveItRight(surrounding[right]));
+
+            updateMaximum(surrounding[leftmost], surrounding[left], surrounding[right],
+                          success, rollback);
+            updateMaximum(surrounding[left], surrounding[right], surrounding[rightmost],
+                          success, rollback);
+
+            if (surrounding[prevMiddle] != pointSet.end()) {
+                success.push_back(maximaPointSet.find(*surrounding[prevMiddle]));
+            }
+        }
+        catch(...) {
+            for (size_t i = 0; i < rollback.size(); i++) {
+                if (rollback[i] != maximaPointSet.end()) {
+                    maximaPointSet.erase(rollback[i]);
+                }
+            }
         }
 
-        iterator temp;
-
-        if (it != pointSet.begin()) {
-            temp = --it;
-        } else {
-            temp = ++it;
+        for (size_t i = 0; i < success.size(); i++) {
+            if (success[i] != maximaPointSet.end()) {
+                maximaPointSet.erase(success[i]);
+            }
         }
 
-        pointSet.erase(toRemove);
-
-        eraseAdjoinMaxima(temp);
-        addAdjoinMaxima(temp);
+        if (surrounding[prevMiddle] != pointSet.end()) {
+            pointSet.erase(surrounding[prevMiddle]);
+        }
     }
 
     FunctionMaxima<A, V>::iterator begin() const {
@@ -193,55 +273,69 @@ public:
 
 private:
 
-    bool shouldBeMaximum(iterator it) const {
-        auto tempLesser = it;
-        tempLesser--;
-        auto tempGreater = it;
-        tempGreater++;
+    enum {
+        prevMiddle,
+        newMiddle,
+        left,
+        right,
+        leftmost,
+        rightmost,
+        requiredSpace = 10
+    };
 
-        return (it == pointSet.begin() || tempLesser->value() < it->value() || (!(tempLesser->value() < it->value()) && !(it->value() < tempLesser->value()))) &&
-               (tempGreater == pointSet.end() || tempGreater->value() < it->value() || (!(tempGreater->value() < it->value()) && !(it->value() < tempGreater->value())));
+    iterator moveItLeft(iterator it) {
+        auto tempIt = it;
+
+        if (it != pointSet.end() && it != pointSet.begin()) {
+            tempIt--;
+        }
+        else {
+            tempIt = pointSet.end();
+        }
+
+        return tempIt;
     }
 
-    // use this function before inserting point_type to pointSet
-    void eraseAdjoinMaxima(iterator it) {
+    iterator moveItRight(iterator it) {
+        auto tempIt = it;
+
+        if (it != pointSet.end()) {
+            tempIt++;
+        }
+        else {
+            tempIt = pointSet.end();
+        }
+
+        return tempIt;
+    }
+
+    static bool sameValue(point_type p1, point_type p2) {
+        return (!(p1.value() < p2.value()) && !(p2.value() < p1.value()));
+    }
+
+    bool shouldBeMaximum(iterator leftIt, iterator it, iterator rightIt) const {
+        return (leftIt == pointSet.end() || leftIt->value() < it->value() ||
+                sameValue(*leftIt, *it)) &&
+               (rightIt == pointSet.end() || rightIt->value() < it->value() ||
+                sameValue(*rightIt, *it));
+    }
+
+    void updateMaximum(iterator leftIt, iterator it, iterator rightIt,
+            std::vector<iterator> &success, std::vector<iterator> &rollback) {
+
         if (it == pointSet.end()) {
             return;
         }
 
-        auto tempLesser = it;
-        tempLesser--;
-        auto tempGreater = it;
-        tempGreater++;
+        auto maximaIt = maximaPointSet.find(*it);
+        bool checkNew = shouldBeMaximum(leftIt, it, rightIt);
 
-        if (it != pointSet.begin()) {
-            maximaPointSet.erase(*tempLesser);
+        if (maximaIt != maximaPointSet.end() && !checkNew) {
+            success.push_back(maximaIt);
         }
 
-        maximaPointSet.erase(*it);
-
-        if (tempGreater != pointSet.end()) {
-            maximaPointSet.erase(*tempGreater);
-        }
-    }
-
-    // use this function after inserting point_type to pointSet
-    void addAdjoinMaxima(iterator it) {
-        auto tempLesser = it;
-        tempLesser--;
-        auto tempGreater = it;
-        tempGreater++;
-
-        if (it != pointSet.begin() && shouldBeMaximum(tempLesser)) {
-            maximaPointSet.insert(*tempLesser);
-        }
-
-        if (shouldBeMaximum(it)) {
-            maximaPointSet.insert(*it);
-        }
-
-        if (tempGreater != pointSet.end() && shouldBeMaximum(tempGreater)) {
-            maximaPointSet.insert(*tempGreater);
+        if (maximaIt == maximaPointSet.end() && checkNew) {
+            rollback.push_back(maximaPointSet.insert(*it));
         }
     }
 
@@ -255,14 +349,14 @@ private:
         bool operator()(point_type a, point_type b) const {
             return (
                     (b.value() < a.value()) ||
-                    ((!(a.value() < b.value()) && !(b.value() < a.value())) &&
+                    (sameValue(a, b) &&
                      (a.arg() < b.arg()))
             );
         }
     };
 
-    std::set<point_type, pointSetCmp> pointSet;
-    std::set<point_type, maximaPointSetCmp> maximaPointSet;
+    std::multiset<point_type, pointSetCmp> pointSet;
+    std::multiset<point_type, maximaPointSetCmp> maximaPointSet;
 };
 
 /**
