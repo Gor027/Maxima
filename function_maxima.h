@@ -124,7 +124,7 @@ public:
         auto it = pointSet.find(toSearch);
 
         if (it == pointSet.end()) {
-            throw InvalidArg("The argument is out of the domain.");
+            throw InvalidArg("invalid argument value");
         }
 
         return ((point_type) *it).value();
