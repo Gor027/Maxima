@@ -3,6 +3,7 @@
 //
 #include <bits/stdc++.h>
 #include "function_maxima.h"
+
 using namespace std;
 
 
@@ -15,23 +16,24 @@ public:
 
 class WINT {
 public:
-    WINT(int a) : i(a) {counter++;};
+    WINT(int a) : i(a) { counter++; };
 
-    WINT(const WINT& w) : i(w.i) {counter++;};
-    ~WINT() {counter--;}
+    WINT(const WINT &w) : i(w.i) { counter++; };
 
-    const WINT& operator=(const WINT& w) {
+    ~WINT() { counter--; }
+
+    const WINT &operator=(const WINT &w) {
         i = w.i;
         return *this;
     }
 
-    bool operator<(const WINT& w) const{
-        if (rand()%20 == 1)
+    bool operator<(const WINT &w) const {
+        if (rand() % 20 == 1)
             throw PorExc();
         return i < w.i;
     }
 
-    static int get_count() {return counter;}
+    static int get_count() { return counter; }
 
 private:
     int i;
@@ -40,17 +42,17 @@ private:
 
 int WINT::counter = 0;
 
-int main(){
+int main() {
 
     srand(time(0));
 
     FunctionMaxima<WINT, WINT> fun;
 
-    for(int i = 0; i < 100000; i++) {
+    for (int i = 0; i < 100000; i++) {
         try {
             fun.set_value(WINT(i), WINT(i));
         } catch (exception &e) {
-           // cout << "w";
+            // cout << "w";
         }
     }
 
@@ -58,14 +60,14 @@ int main(){
     FunctionMaxima<WINT, WINT> fun2(fun);
     FunctionMaxima<WINT, WINT> fun3;
     fun3 = fun2;
-    
+
     assert(fun.size() == fun2.size() && fun3.size() == fun2.size() && fun.size() == WINT::get_count() / 2);
 
-    for(int i = 0; i < 100000; i++) {
+    for (int i = 0; i < 100000; i++) {
         try {
             fun2.erase(WINT(i));
         } catch (exception &e) {
-         //   cout << "w";
+            //   cout << "w";
         }
     }
 

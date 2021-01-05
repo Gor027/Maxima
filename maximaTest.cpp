@@ -54,180 +54,180 @@ bool fun_mx_equal(const FunctionMaxima<A, V> &F,
 
 TEST(example, example
 ) {
-FunctionMaxima<int, int> fun;
-fun.set_value(0, 1);
-ASSERT_TRUE(fun_equal(fun, {{0, 1}})
-);
-ASSERT_TRUE(fun_mx_equal(fun, {{0, 1}})
-);
+    FunctionMaxima<int, int> fun;
+    fun.set_value(0, 1);
+    ASSERT_TRUE(fun_equal(fun, {{0, 1}})
+    );
+    ASSERT_TRUE(fun_mx_equal(fun, {{0, 1}})
+    );
 
-fun.set_value(0, 0);
-ASSERT_TRUE(fun_equal(fun, {{0, 0}})
-);
-ASSERT_TRUE(fun_mx_equal(fun, {{0, 0}})
-);
+    fun.set_value(0, 0);
+    ASSERT_TRUE(fun_equal(fun, {{0, 0}})
+    );
+    ASSERT_TRUE(fun_mx_equal(fun, {{0, 0}})
+    );
 
-fun.set_value(1, 0);
-fun.set_value(2, 0);
-ASSERT_TRUE(fun_equal(fun, {{0, 0},
-                            {1, 0},
-                            {2, 0}})
-);
-ASSERT_TRUE(fun_mx_equal(fun, {{0, 0},
-                               {1, 0},
-                               {2, 0}})
-);
+    fun.set_value(1, 0);
+    fun.set_value(2, 0);
+    ASSERT_TRUE(fun_equal(fun, {{0, 0},
+                                {1, 0},
+                                {2, 0}})
+    );
+    ASSERT_TRUE(fun_mx_equal(fun, {{0, 0},
+                                   {1, 0},
+                                   {2, 0}})
+    );
 
-fun.set_value(1, 1);
-ASSERT_TRUE(fun_mx_equal(fun, {{1, 1}})
-);
+    fun.set_value(1, 1);
+    ASSERT_TRUE(fun_mx_equal(fun, {{1, 1}})
+    );
 
-fun.set_value(2, 2);
-ASSERT_TRUE(fun_mx_equal(fun, {{2, 2}})
-);
-fun.set_value(0, 2);
-fun.set_value(1, 3);
-ASSERT_TRUE(fun_mx_equal(fun, {{1, 3}})
-);
+    fun.set_value(2, 2);
+    ASSERT_TRUE(fun_mx_equal(fun, {{2, 2}})
+    );
+    fun.set_value(0, 2);
+    fun.set_value(1, 3);
+    ASSERT_TRUE(fun_mx_equal(fun, {{1, 3}})
+    );
 
-try {
+    try {
 // Nie ma wartości na tym argumencie
-auto c = fun.value_at(4);
-(void)
-c;
-ASSERT_TRUE(false);
-} catch (
-InvalidArg &e
-) {
-std::cout << e.
+        auto c = fun.value_at(4);
+        (void)
+                c;
+        ASSERT_TRUE(false);
+    } catch (
+            InvalidArg &e
+    ) {
+        std::cout << e.
 
-what()
+                what()
 
-<<
-std::endl;
-}
+                  <<
+                  std::endl;
+    }
 
-fun.erase(1);
-ASSERT_TRUE(fun
-.find(1) == fun.
+    fun.erase(1);
+    ASSERT_TRUE(fun
+                        .find(1) == fun.
 
-end()
+            end()
 
-);
-ASSERT_TRUE(fun_mx_equal(fun, {{0, 2},
-                               {2, 2}})
-);
+    );
+    ASSERT_TRUE(fun_mx_equal(fun, {{0, 2},
+                                   {2, 2}})
+    );
 
-fun.set_value(-2, 0);
-fun.set_value(-1, -1);
-ASSERT_TRUE(fun_mx_equal(fun, {{0,  2},
-                               {2,  2},
-                               {-2, 0}})
-);
+    fun.set_value(-2, 0);
+    fun.set_value(-1, -1);
+    ASSERT_TRUE(fun_mx_equal(fun, {{0,  2},
+                                   {2,  2},
+                                   {-2, 0}})
+    );
 
-std::vector<FunctionMaxima<Secret, Secret>::point_type> v;
-{
-FunctionMaxima<Secret, Secret> temp;
-temp.
-set_value(Secret::create(1), Secret::create(10)
-);
-temp.
-set_value(Secret::create(2), Secret::create(20)
-);
-v.
-push_back(*temp
-.
+    std::vector<FunctionMaxima<Secret, Secret>::point_type> v;
+    {
+        FunctionMaxima<Secret, Secret> temp;
+        temp.
+                set_value(Secret::create(1), Secret::create(10)
+        );
+        temp.
+                set_value(Secret::create(2), Secret::create(20)
+        );
+        v.
+                push_back(*temp
+                .
 
-begin()
+                        begin()
 
-);
-v.
-push_back(*temp
-.
+        );
+        v.
+                push_back(*temp
+                .
 
-mx_begin()
+                        mx_begin()
 
-);
-}
-ASSERT_TRUE(v[0]
-.
+        );
+    }
+    ASSERT_TRUE(v[0]
+                        .
 
-arg()
+                                arg()
 
-.
+                        .
 
-get()
+                                get()
 
-== 1);
-ASSERT_TRUE(v[0]
-.
+                == 1);
+    ASSERT_TRUE(v[0]
+                        .
 
-value()
+                                value()
 
-.
+                        .
 
-get()
+                                get()
 
-== 10);
-ASSERT_TRUE(v[1]
-.
+                == 10);
+    ASSERT_TRUE(v[1]
+                        .
 
-arg()
+                                arg()
 
-.
+                        .
 
-get()
+                                get()
 
-== 2);
-ASSERT_TRUE(v[1]
-.
+                == 2);
+    ASSERT_TRUE(v[1]
+                        .
 
-value()
+                                value()
 
-.
+                        .
 
-get()
+                                get()
 
-== 20);
+                == 20);
 
 // To powinno działać szybko.
-FunctionMaxima<int, int> big;
-using size_type = decltype(big)::size_type;
-const size_type N = 100000;
-for (
-size_type i = 1;
-i <=
-N;
-++i) {
-big.
-set_value(i, i
-);
-}
-size_type counter = 0;
-for (
-size_type i = 1;
-i <=
-N;
-++i) {
-big.
-set_value(i, big
-.
-value_at(i)
-+ 1);
-for (
-auto it = big.mx_begin();
-it != big.
+    FunctionMaxima<int, int> big;
+    using size_type = decltype(big)::size_type;
+    const size_type N = 100000;
+    for (
+            size_type i = 1;
+            i <=
+            N;
+            ++i) {
+        big.
+                set_value(i, i
+        );
+    }
+    size_type counter = 0;
+    for (
+            size_type i = 1;
+            i <=
+            N;
+            ++i) {
+        big.
+                set_value(i, big
+                                     .
+                                             value_at(i)
+                             + 1);
+        for (
+                auto it = big.mx_begin();
+                it != big.
 
-mx_end();
+                        mx_end();
 
-++it) {
-++
-counter;
-}
-}
-ASSERT_TRUE(counter
-== 2 * N - 1);
-big = fun;
+                ++it) {
+            ++
+                    counter;
+        }
+    }
+    ASSERT_TRUE(counter
+                == 2 * N - 1);
+    big = fun;
 }
 
 // CUSTOM TESTS
@@ -259,102 +259,103 @@ private:
 
 TEST(throwOnCompare, sizeNotChangingAfterChangesValue
 ) {
-FunctionMaxima<ThrowsOnCompare, ThrowsOnCompare> temp;
-temp.
-set_value(ThrowsOnCompare::create(1), ThrowsOnCompare::create(10)
-);
-temp.
-set_value(ThrowsOnCompare::create(2), ThrowsOnCompare::create(20)
-);
-ASSERT_EQ(temp
-.
+    FunctionMaxima<ThrowsOnCompare, ThrowsOnCompare> temp;
+    temp.
+            set_value(ThrowsOnCompare::create(1), ThrowsOnCompare::create(10)
+    );
+    temp.
+            set_value(ThrowsOnCompare::create(2), ThrowsOnCompare::create(20)
+    );
+    ASSERT_EQ(temp
+                      .
 
-size(),
+                              size(),
 
-2);
-temp.
-set_value(ThrowsOnCompare::create(2), ThrowsOnCompare::create(15)
-);
-ASSERT_EQ(temp
-.
+              2);
+    temp.
+            set_value(ThrowsOnCompare::create(2), ThrowsOnCompare::create(15)
+    );
+    ASSERT_EQ(temp
+                      .
 
-size(),
+                              size(),
 
-2);
+              2);
 }
 
 TEST(throwOnCompare, valueChangesProperly
 ) {
-FunctionMaxima<ThrowsOnCompare, ThrowsOnCompare> temp;
-temp.
-set_value(ThrowsOnCompare::create(1), ThrowsOnCompare::create(10)
-);
-temp.
-set_value(ThrowsOnCompare::create(2), ThrowsOnCompare::create(20)
-);
-temp.
-set_value(ThrowsOnCompare::create(2), ThrowsOnCompare::create(15)
-);
-ASSERT_EQ(temp
-.
+    FunctionMaxima<ThrowsOnCompare, ThrowsOnCompare> temp;
+    temp.
+            set_value(ThrowsOnCompare::create(1), ThrowsOnCompare::create(10)
+    );
+    temp.
+            set_value(ThrowsOnCompare::create(2), ThrowsOnCompare::create(20)
+    );
+    temp.
+            set_value(ThrowsOnCompare::create(2), ThrowsOnCompare::create(15)
+    );
+    ASSERT_EQ(temp
+                      .
 
-size(),
+                              size(),
 
-2);
-auto c = temp.value_at(ThrowsOnCompare::create(2));
-ASSERT_EQ(c
-.
+              2);
+    auto c = temp.value_at(ThrowsOnCompare::create(2));
+    ASSERT_EQ(c
+                      .
 
-get(),
+                              get(),
 
-15);
+              15);
 }
 
 TEST(throwOnCompare, exceptionHandlingProperly
 ) {
-FunctionMaxima<ThrowsOnCompare, ThrowsOnCompare> temp;
-temp.
-set_value(ThrowsOnCompare::create(1), ThrowsOnCompare::create(10)
-);
-EXPECT_THROW(
-{
-temp.
-set_value(ThrowsOnCompare::create(SPECIAL_THROW_VALUE), ThrowsOnCompare::create(20)
-);
-},
-std::string);
+    FunctionMaxima<ThrowsOnCompare, ThrowsOnCompare> temp;
+    temp.
+            set_value(ThrowsOnCompare::create(1), ThrowsOnCompare::create(10)
+    );
+    EXPECT_THROW(
+            {
+                temp.
+                        set_value(ThrowsOnCompare::create(SPECIAL_THROW_VALUE), ThrowsOnCompare::create(20)
+                );
+            },
+            std::string);
 // Wyjątek się rzucił, nie powinno być dodanej liczby.
-ASSERT_EQ(temp
-.
+    ASSERT_EQ(temp
+                      .
 
-size(),
+                              size(),
 
-1);
+              1);
 }
 
 TEST(throwOnCompare, exceptionHandlingProperlySwapped
 ) {
-FunctionMaxima<ThrowsOnCompare, ThrowsOnCompare> temp;
-temp.
-set_value(ThrowsOnCompare::create(1), ThrowsOnCompare::create(10)
-);
-EXPECT_THROW(
-{
-temp.
-set_value(ThrowsOnCompare::create(2), ThrowsOnCompare::create(SPECIAL_THROW_VALUE)
-);
-},
-std::string);
+    FunctionMaxima<ThrowsOnCompare, ThrowsOnCompare> temp;
+    temp.
+            set_value(ThrowsOnCompare::create(1), ThrowsOnCompare::create(10)
+    );
+    EXPECT_THROW(
+            {
+                temp.
+                        set_value(ThrowsOnCompare::create(2), ThrowsOnCompare::create(SPECIAL_THROW_VALUE)
+                );
+            },
+            std::string);
 // Wyjątek się rzucił, nie powinno być dodanej liczby.
-ASSERT_EQ(temp
-.
+    ASSERT_EQ(temp
+                      .
 
-size(),
+                              size(),
 
-1);
+              1);
 }
 
 int main(int argc, char **argv) {
     testing::InitGoogleTest(&argc, argv);
+
     return RUN_ALL_TESTS();
 }

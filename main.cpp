@@ -32,15 +32,15 @@ int main() {
         std::cout << p.arg() << " -> " << p.value() << std::endl;
     }
 
-    for(auto it = F.mx_begin(); it != F.mx_end(); ++it) {
+    for (auto it = F.mx_begin(); it != F.mx_end(); ++it) {
         std::cout << it->arg() << " -> " << it->value() << std::endl;
     }
 
     F.set_value(5, 1);
 
-    std::cout<<"second time"<<std::endl;
+    std::cout << "second time" << std::endl;
 
-    for(auto it = F.mx_begin(); it != F.mx_end(); ++it) {
+    for (auto it = F.mx_begin(); it != F.mx_end(); ++it) {
         std::cout << it->arg() << " -> " << it->value() << std::endl;
     }
 
@@ -49,7 +49,7 @@ int main() {
     std::cout << "Assignment checking" << std::endl;
 
     big = F;
-    for(auto it = big.mx_begin(); it != big.mx_end(); ++it) {
+    for (auto it = big.mx_begin(); it != big.mx_end(); ++it) {
         std::cout << it->arg() << " -> " << it->value() << std::endl;
     }
 

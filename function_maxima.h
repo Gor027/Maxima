@@ -149,8 +149,7 @@ public:
                 insertion = true;
                 surrounding.push_back(moveItLeft(surrounding[newMiddle]));
                 surrounding.push_back(moveItRight(surrounding[newMiddle]));
-            }
-            else {
+            } else {
                 surrounding.push_back(surrounding[prevMiddle]);
                 surrounding.push_back(moveItLeft(surrounding[prevMiddle]));
                 surrounding.push_back(moveItRight(surrounding[prevMiddle]));
@@ -172,7 +171,7 @@ public:
                 success.push_back(maximaPointSet.find(*surrounding[prevMiddle]));
             }
         }
-        catch(...) {
+        catch (...) {
             for (size_t i = 0; i < rollback.size(); i++) {
                 if (rollback[i] != maximaPointSet.end()) {
                     maximaPointSet.erase(rollback[i]);
@@ -182,7 +181,7 @@ public:
             if (insertion && surrounding[newMiddle] != pointSet.end()) {
                 pointSet.erase(surrounding[newMiddle]);
             }
-            
+
             throw;
         }
 
@@ -228,13 +227,13 @@ public:
                 success.push_back(maximaPointSet.find(*surrounding[prevMiddle]));
             }
         }
-        catch(...) {
+        catch (...) {
             for (size_t i = 0; i < rollback.size(); i++) {
                 if (rollback[i] != maximaPointSet.end()) {
                     maximaPointSet.erase(rollback[i]);
                 }
             }
-            
+
             throw;
         }
 
@@ -292,8 +291,7 @@ private:
 
         if (it != pointSet.end() && it != pointSet.begin()) {
             tempIt--;
-        }
-        else {
+        } else {
             tempIt = pointSet.end();
         }
 
@@ -305,8 +303,7 @@ private:
 
         if (it != pointSet.end()) {
             tempIt++;
-        }
-        else {
+        } else {
             tempIt = pointSet.end();
         }
 
@@ -325,7 +322,7 @@ private:
     }
 
     void updateMaximum(iterator leftIt, iterator it, iterator rightIt,
-            std::vector<iterator> &success, std::vector<iterator> &rollback) {
+                       std::vector<iterator> &success, std::vector<iterator> &rollback) {
 
         if (it == pointSet.end()) {
             return;
