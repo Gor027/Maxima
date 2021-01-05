@@ -54,8 +54,6 @@ public:
      */
     ~FunctionMaxima() = default;
 
-    /***********GOES_INTO_IMPL***********/
-
     V const &value_at(A const &a) const;
 
     void set_value(A const &a, V const &v);
@@ -99,7 +97,7 @@ public:
 
 private:
     /**
-     * Impl class will have access to the private parametrized constructor of point_type
+     * Impl class will have access to the private parametrized constructors of point_type
      */
     friend class FunctionMaxima<A, V>::Impl;
 
@@ -323,7 +321,6 @@ private:
 
     void updateMaximum(iterator leftIt, iterator it, iterator rightIt,
                        std::vector<iterator> &success, std::vector<iterator> &rollback) {
-
         if (it == pointSet.end()) {
             return;
         }
@@ -340,12 +337,18 @@ private:
         }
     }
 
+    /**
+     * Comparator for the set of all points.
+     */
     struct pointSetCmp {
         bool operator()(point_type a, point_type b) const {
             return a.arg() < b.arg();
         }
     };
 
+    /**
+     * Comparator for the set of all maxima points.
+     */
     struct maximaPointSetCmp {
         bool operator()(point_type a, point_type b) const {
             return (
@@ -402,8 +405,7 @@ void FunctionMaxima<A, V>::set_value(const A &a, const V &v) {
 }
 
 /**
- * The function erases the element given by the key.
- * Note that if the element is a point then the pointed-to memory will not be touched.
+ * The function will erase the element given by the key.
  *
  * @tparam A - type of the domain values
  * @tparam V - type of the range values
@@ -414,31 +416,78 @@ void FunctionMaxima<A, V>::erase(const A &a) {
     return pImpl->erase(a);
 }
 
+/**
+ * Iteration is done in ascending order according to the keys.
+ *
+ * @tparam A - type of the domain values
+ * @tparam V - type of the range values
+ * @return a read-only (constant) iterator that points to the first element in FunctionMaxima.
+ */
 template<typename A, typename V>
 typename FunctionMaxima<A, V>::iterator FunctionMaxima<A, V>::begin() const {
     return pImpl->begin();
 }
 
+/**
+ * Iteration is done in ascending order according to the keys.
+ *
+ * @tparam A - type of the domain values
+ * @tparam V - type of the range values
+ * @return a read-only (constant) iterator that points one past the last element in FunctionMaxima.
+ */
 template<typename A, typename V>
 typename FunctionMaxima<A, V>::iterator FunctionMaxima<A, V>::end() const {
     return pImpl->end();
 }
 
+/**
+ * @brief tries to locate an element in FunctionMaxima.
+ *
+ *  This function takes a key and tries to locate the element with which
+ *  the argument matches.  If successful the function returns an iterator
+ *  pointing to the sought after element. If unsuccessful it returns the
+ *  past-the-end ( @c end() ) iterator.
+ *
+ * @tparam A - type of the domain values
+ * @tparam V - type of the range values
+ * @param a - element to be located
+ * @return iterator pointing to sought-after element, or end() if not found.
+ */
 template<typename A, typename V>
 typename FunctionMaxima<A, V>::iterator FunctionMaxima<A, V>::find(const A &a) const {
     return pImpl->find(a);
 }
 
+/**
+ * Iteration is done in descending order according to the values.
+ *
+ * @tparam A - type of the domain values
+ * @tparam V - type of the range values
+ * @return a read-only (constant) iterator that points to the first maxima element in FunctionMaxima.
+ */
 template<typename A, typename V>
 typename FunctionMaxima<A, V>::mx_iterator FunctionMaxima<A, V>::mx_begin() const {
     return pImpl->mx_begin();
 }
 
+/**
+ * Iteration is done in descending order according to the values.
+ *
+ * @tparam A - type of the domain values
+ * @tparam V - type of the range values
+ * @return a read-only (constant) iterator that points one past the last maxima element in FunctionMaxima.
+ */
 template<typename A, typename V>
 typename FunctionMaxima<A, V>::mx_iterator FunctionMaxima<A, V>::mx_end() const {
     return pImpl->mx_end();
 }
 
+/**
+ *
+ * @tparam A - type of the domain values
+ * @tparam V - type of the range values
+ * @return the size of the domain of FunctionMaxima.
+ */
 template<typename A, typename V>
 typename FunctionMaxima<A, V>::size_type FunctionMaxima<A, V>::size() const {
     return pImpl->size();

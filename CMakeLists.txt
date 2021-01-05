@@ -10,9 +10,9 @@ set(CMAKE_CXX_STANDARD 17)
 add_executable(
         Maxima
         function_maxima.h
-        #        main.cpp
+        main.cpp
         #        example.cpp
-        maximaTest.cpp
+        #        maximaTest.cpp
         #        wyjatkowy_int.cpp
 )
 
