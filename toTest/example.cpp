@@ -1,4 +1,4 @@
-#include "function_maxima.h"
+#include "../function_maxima.h"
 
 #include <cassert>
 #include <iostream>

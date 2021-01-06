@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "function_maxima.h"
+#include "../function_maxima.h"
 #include <vector>
 
 // EXAMPLE TEST CLASSES.

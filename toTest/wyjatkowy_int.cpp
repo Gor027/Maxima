@@ -2,7 +2,7 @@
 // Created by kamil on 04.01.2021.
 //
 #include <bits/stdc++.h>
-#include "function_maxima.h"
+#include "../function_maxima.h"
 
 using namespace std;
 
