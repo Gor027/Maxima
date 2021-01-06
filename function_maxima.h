@@ -142,6 +142,10 @@ public:
             if(storage.surrounding[prevMiddle] == pointSet.end()) {
                 findSurrounding(pointSet.insert(toInsert), storage);
             } else {
+                if (sameValue(toInsert, *storage.surrounding[prevMiddle])) {
+                    return;
+                }
+
                 findSurrounding(storage.surrounding[prevMiddle], storage);
                 storage.surrounding[newMiddle] = pointSet.insert(toInsert);
             }
@@ -160,6 +164,11 @@ public:
             makeRollback(insertion, storage);
 
             throw e;
+        }
+        catch (...) {
+            makeRollback(insertion, storage);
+
+            throw;
         }
 
         makeCommit(storage);
@@ -189,6 +198,11 @@ public:
             makeRollback(false, storage);
 
             throw e;
+        }
+        catch (...) {
+            makeRollback(false, storage);
+
+            throw;
         }
 
         makeCommit(storage);
@@ -289,7 +303,7 @@ private:
 
         auto maximaIt = maximaPointSet.find(*storage.surrounding[middle]);
         bool checkNew = shouldBeMaximum(storage.surrounding[left],
-                storage.surrounding[middle], storage.surrounding[right]);
+                                        storage.surrounding[middle], storage.surrounding[right]);
 
         if (maximaIt != maximaPointSet.end() && !checkNew) {
             storage.success.push_back(maximaIt);
@@ -347,7 +361,7 @@ private:
     struct maximaPointSetCmp {
         bool operator()(point_type a, point_type b) const {
             return (b.value() < a.value()) ||
-                    (sameValue(a, b) && (a.arg() < b.arg()));
+                   (sameValue(a, b) && (a.arg() < b.arg()));
         }
     };
 
