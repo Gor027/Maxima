@@ -10,10 +10,9 @@ set(CMAKE_CXX_STANDARD 17)
 add_executable(
         Maxima
         function_maxima.h
-        main.cpp
-        #        example.cpp
-        #        maximaTest.cpp
-        #        wyjatkowy_int.cpp
+        #        toTest/example.cpp
+        toTest/maximaTest.cpp
+        #        toTest/wyjatkowy_int.cpp
 )
 
 target_link_libraries(Maxima ${GTEST_LIBRARIES} pthread)

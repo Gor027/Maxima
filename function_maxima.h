@@ -48,6 +48,13 @@ public:
     }
 
     /**
+     * Move constructors
+     */
+    FunctionMaxima(FunctionMaxima<A, V> &&rhs) = default;
+
+    FunctionMaxima &operator=(FunctionMaxima &&rhs) = default;
+
+    /**
      * Destructor
      */
     ~FunctionMaxima() = default;
