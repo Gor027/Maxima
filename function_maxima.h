@@ -1,13 +1,12 @@
 #ifndef MAXIMA_FUNCTION_MAXIMA_H
 #define MAXIMA_FUNCTION_MAXIMA_H
 
-#include "iostream"
+#include <iostream>
 #include <map>
 #include <set>
 #include <vector>
 #include <memory>
-#include "experimental/propagate_const"
-#include "iterator"
+#include <iterator>
 
 /*********************************INVALID_ARG*********************************/
 
@@ -32,16 +31,15 @@ public:
 
     using size_type = std::size_t;
 
-    using iterator = typename std::set<point_type>::iterator;
-    using mx_iterator = typename std::set<point_type>::iterator;
+    using iterator = typename std::multiset<point_type>::iterator;
+    using mx_iterator = typename std::multiset<point_type>::iterator;
 
     explicit FunctionMaxima();
 
     /**
      * Copy constructors
      */
-    FunctionMaxima(const FunctionMaxima<A, V> &rhs) : pImpl(std::make_unique<Impl>(*rhs.pImpl)) {
-    }
+    FunctionMaxima(const FunctionMaxima<A, V> &rhs) : pImpl(std::make_unique<Impl>(*rhs.pImpl)) {}
 
     FunctionMaxima &operator=(const FunctionMaxima &rhs) {
         pImpl = std::make_unique<Impl>(*rhs.pImpl);
@@ -60,17 +58,17 @@ public:
 
     void erase(A const &a);
 
-    iterator begin() const;
+    iterator begin() const noexcept;
 
-    iterator end() const;
+    iterator end() const noexcept;
 
     iterator find(A const &a) const;
 
-    mx_iterator mx_begin() const;
+    mx_iterator mx_begin() const noexcept;
 
-    mx_iterator mx_end() const;
+    mx_iterator mx_end() const noexcept;
 
-    size_type size() const;
+    size_type size() const noexcept;
 
 private:
     class Impl;
@@ -83,17 +81,15 @@ private:
 template<typename A, typename V>
 class FunctionMaxima<A, V>::point_type {
 public:
-    A const &arg() const {
+    A const &arg() const noexcept {
         return *argument.get();
     }
 
-    V const &value() const {
+    V const &value() const noexcept {
         return *point.get();
     }
 
     point_type(const point_type &rhs) = default;
-
-    point_type(point_type &&rhs) noexcept = default;
 
 private:
     /**
@@ -101,12 +97,9 @@ private:
      */
     friend class FunctionMaxima<A, V>::Impl;
 
-    // we are making shallow copy of A and V and creating shared_ptr to them
-    // shoulnd't we make full copy?
-    point_type(A argument, V point) : argument(std::make_shared<A>(argument)), point(std::make_shared<V>(point)) {}
+    point_type(const A &argument, const V &point) : argument(std::make_shared<A>(argument)), point(std::make_shared<V>(point)) {}
 
-    // we don't need full copy since this object is only temporary
-    point_type(A argument) : argument(std::make_shared<A>(argument)), point(nullptr) {}
+    point_type(const A &argument) : argument(std::make_shared<A>(argument)), point(nullptr) {}
 
     std::shared_ptr<A> argument;
     std::shared_ptr<V> point;
@@ -208,11 +201,11 @@ public:
         makeCommit(storage);
     }
 
-    FunctionMaxima<A, V>::iterator begin() const {
+    FunctionMaxima<A, V>::iterator begin() const noexcept {
         return pointSet.begin();
     }
 
-    FunctionMaxima<A, V>::iterator end() const {
+    FunctionMaxima<A, V>::iterator end() const noexcept {
         return pointSet.end();
     }
 
@@ -222,15 +215,15 @@ public:
         return pointSet.find(toSearch);
     }
 
-    FunctionMaxima<A, V>::mx_iterator mx_begin() const {
+    FunctionMaxima<A, V>::mx_iterator mx_begin() const noexcept {
         return maximaPointSet.begin();
     }
 
-    FunctionMaxima<A, V>::mx_iterator mx_end() const {
+    FunctionMaxima<A, V>::mx_iterator mx_end() const noexcept {
         return maximaPointSet.end();
     }
 
-    size_type size() const {
+    size_type size() const noexcept {
         return pointSet.size();
     }
 
@@ -243,9 +236,14 @@ private:
         right,
         leftmost,
         rightmost,
-        requiredSpace = 10
+        requiredSpace
     };
 
+    /**
+     * Struct which contains std::vector's with reserved necessary amount of space
+     * for operations in Implementation.
+     * It makes push_back() nothrow (on those vectors).
+     */
     struct Storage {
         Storage() {
             success = std::vector<mx_iterator>();
@@ -261,7 +259,13 @@ private:
         std::vector<iterator> surrounding;
     };
 
-    iterator moveItLeft(const iterator it) const {
+    /**
+     * Function is nothrow because it only try to move given iterator using iterator arithmetic.
+     *
+     * @param it - iterator
+     * @return   - it - 1 (in terms of iterator arithmetic) or pointSet.end() if it 0 1 is out of sets range.
+     */
+    iterator moveItLeft(const iterator it) const noexcept {
         auto tempIt = it;
 
         if (it != pointSet.end() && it != pointSet.begin()) {
@@ -273,7 +277,13 @@ private:
         return tempIt;
     }
 
-    iterator moveItRight(const iterator it) const {
+    /**
+     * Function is nothrow because it only try to move given iterator using iterator arithmetic.
+     *
+     * @param it - iterator
+     * @return   - it + 1 (in terms of iterator arithmetic) or pointSet.end() if it + 1 is out of sets range.
+     */
+    iterator moveItRight(const iterator it) const noexcept {
         auto tempIt = it;
 
         if (it != pointSet.end()) {
@@ -285,10 +295,27 @@ private:
         return tempIt;
     }
 
+    /**
+     * Function has strong guarantee:
+     * comparing point_types has strong guarantee.
+     *
+     * @param p1 - first point
+     * @param p2 - second point
+     * @return   -bool determining whether given points have the same value.
+     */
     static bool sameValue(const point_type &p1, const point_type &p2) {
         return (!(p1.value() < p2.value()) && !(p2.value() < p1.value()));
     }
 
+    /**
+     * Function has strong guarantee because it only uses functions with at least strong guarantee:
+     * comparing point_types has strong guarantee.
+     *
+     * @param leftIt  - iterator to point that's lesser and closest (in terms of comparing arguments) to *it in pointSet
+     * @param it      - iterator to point that's being checked
+     * @param rightIt - iterator to point that's greater and closest (in terms of comparing arguments) to *it in pointSet
+     * @return        - bool determining whether point (to which points iterator it) is maximum.
+     */
     bool shouldBeMaximum(const iterator leftIt, const iterator it, const iterator rightIt) const {
         return (leftIt == pointSet.end() || leftIt->value() < it->value() ||
                 sameValue(*leftIt, *it)) &&
@@ -296,6 +323,20 @@ private:
                 sameValue(*rightIt, *it));
     }
 
+    /**
+     * Updates maximaPointSet by checking whether point described by middle should be
+     * new masimum and inserts it to the maximaPointSet.
+     * Also updates iterators that should be erased in case of success and rollback
+     * (which are stored in storage).
+     * Function has strong guarantee because it only uses functions with at least strong guarantee:
+     * find() or insert() on std::multiset<point_type> where comparing point_types has strong guarantee,
+     * push_back() on std::vector is nothrow if the vector has enough reserved space which is the case here.
+     *
+     * @param left    - description of point that's lesser and closest (in terms of comparing arguments) to *it in pointSet
+     * @param middle  - description of point that's being updated
+     * @param right   - description of point that's greater and closest (in terms of comparing arguments) to *it in pointSet
+     * @param storage - struct containing necessary data
+     */
     void updateMaximum(const size_t left, const size_t middle, const size_t right, Storage &storage) {
         if (storage.surrounding[middle] == pointSet.end()) {
             return;
@@ -314,7 +355,15 @@ private:
         }
     }
 
-    void findSurrounding(iterator it, Storage &storage) const {
+    /**
+     * Updates content of storage with iterators of neighbours of the middle point.
+     * Function is nothrow because it uses only nothrow functions:
+     * push_back() on std::vector is nothrow if the vector has enough reserved space which is the case here.
+     *
+     * @param it      - iterator to the middle point
+     * @param storage - struct containing necessary data
+     */
+    void findSurrounding(iterator it, Storage &storage) const noexcept {
         storage.surrounding.push_back(it);
         storage.surrounding.push_back(moveItLeft(it));
         storage.surrounding.push_back(moveItRight(it));
@@ -322,7 +371,17 @@ private:
         storage.surrounding.push_back(moveItRight(storage.surrounding[right]));
     }
 
-    void makeCommit(Storage &storage) {
+    /**
+     * Makes commit in form of erasing outdated points from maximaPointSet
+     * (their iterators are stored in storage)
+     * and erases outdated point from pointSet (is such one exists).
+     * Function is nothrow:
+     * erase on std::multiset<point_type> by iterator is nothrow.
+     *
+     * @param insertion - bool determining whether insertion to pointSet was made
+     * @param storage   - struct containing necessary data
+     */
+    void makeCommit(Storage &storage) noexcept {
         for (size_t i = 0; i < storage.success.size(); i++) {
             if (storage.success[i] != maximaPointSet.end()) {
                 maximaPointSet.erase(storage.success[i]);
@@ -334,7 +393,17 @@ private:
         }
     }
 
-    void makeRollback(const bool insertion, Storage &storage) {
+    /**
+     * Makes rollback in form of erasing inserted points from maximaPointSet
+     * (their iterators are stored in storage)
+     * and erases inserted point from pointSet (is such one exists).
+     * Function is nothrow:
+     * erase on std::multiset<point_type> by iterator is nothrow.
+     *
+     * @param insertion - bool determining whether insertion to pointSet was made
+     * @param storage   - struct containing necessary data
+     */
+    void makeRollback(const bool insertion, Storage &storage) noexcept {
         for (size_t i = 0; i < storage.rollback.size(); i++) {
             if (storage.rollback[i] != maximaPointSet.end()) {
                 maximaPointSet.erase(storage.rollback[i]);
@@ -347,7 +416,7 @@ private:
     }
 
     /**
-     * Comparator for the set of all points.
+     * Comparator for the multiset of all points.
      */
     struct pointSetCmp {
         bool operator()(point_type a, point_type b) const {
@@ -356,7 +425,7 @@ private:
     };
 
     /**
-     * Comparator for the set of all maxima points.
+     * Comparator for the multiset of all maxima points.
      */
     struct maximaPointSetCmp {
         bool operator()(point_type a, point_type b) const {
@@ -380,8 +449,10 @@ FunctionMaxima<A, V>::FunctionMaxima() : pImpl{std::make_unique<Impl>()} {
 }
 
 /**
- * The function will look up for the key in the map.
+ * The function will look up for the key in the multiset.
  * In case there is no such key, Invalid Argument exception is thrown.
+ * Function has strong guarantee:
+ * find() on std::multiset<point_type> *where comparing point_types has strong guarantee) has strong guarantee.
  *
  * @tparam A - type of the domain values
  * @tparam V - type of the range values
@@ -395,10 +466,15 @@ V const &FunctionMaxima<A, V>::value_at(const A &a) const {
 
 /**
  * The function will update the value of the existing key.
- * If the key does not exist in the map, then it will be inserted
+ * If the key does not exist in the multiset, then it will be inserted
  * with the value assigned to it.
- *
- * Note: The function first erases element by key and the inserts the new one.
+ * Updates maximaPointSet is necessary.
+ * Function has strong guarantee because:
+ * push_back() on std::vector stored in storage is nothrow,
+ * find() and insert() on std::multiset<point_type> has strong guarantee.
+ * First it tries to do all the inserts (strong guarantee) and at the end it erases by iterator (nothrow).
+ * When exception is thrown function erases all inserts made during it's performance by iterators (nothrow).
+ * Those actions assure that function has strong guarantee.
  *
  * @tparam A - type of the domain values
  * @tparam V - type of the range values
@@ -412,6 +488,12 @@ void FunctionMaxima<A, V>::set_value(const A &a, const V &v) {
 
 /**
  * The function will erase the element given by the key.
+ * Function has strong guarantee because:
+ * push_back() on std::vector stored in storage is nothrow,
+ * find() and insert() on std::multiset<point_type> has strong guarantee.
+ * First it tries to do all the inserts (strong guarantee) and at the end it erases by iterator (nothrow).
+ * When exception is thrown function erases all inserts made during it's performance by iterators (nothrow).
+ * Those actions assure that function has strong guarantee.
  *
  * @tparam A - type of the domain values
  * @tparam V - type of the range values
@@ -424,35 +506,36 @@ void FunctionMaxima<A, V>::erase(const A &a) {
 
 /**
  * Iteration is done in ascending order according to the keys.
- *
+ * Function is nothrow because begin() on std::multiset is nothrow.
  * @tparam A - type of the domain values
  * @tparam V - type of the range values
  * @return a read-only (constant) iterator that points to the first element in FunctionMaxima.
  */
 template<typename A, typename V>
-typename FunctionMaxima<A, V>::iterator FunctionMaxima<A, V>::begin() const {
+typename FunctionMaxima<A, V>::iterator FunctionMaxima<A, V>::begin() const noexcept {
     return pImpl->begin();
 }
 
 /**
  * Iteration is done in ascending order according to the keys.
+ * Function is nothrow because end() on std::multiset is nothrow.
  *
  * @tparam A - type of the domain values
  * @tparam V - type of the range values
  * @return a read-only (constant) iterator that points one past the last element in FunctionMaxima.
  */
 template<typename A, typename V>
-typename FunctionMaxima<A, V>::iterator FunctionMaxima<A, V>::end() const {
+typename FunctionMaxima<A, V>::iterator FunctionMaxima<A, V>::end() const noexcept {
     return pImpl->end();
 }
 
 /**
- * @brief tries to locate an element in FunctionMaxima.
- *
  *  This function takes a key and tries to locate the element with which
  *  the argument matches.  If successful the function returns an iterator
  *  pointing to the sought after element. If unsuccessful it returns the
  *  past-the-end ( @c end() ) iterator.
+ *  Function has strong guarantee:
+ *  find() on std::multiset<point_type> (where comparing point_types has strong guarantee) has strong guarantee.
  *
  * @tparam A - type of the domain values
  * @tparam V - type of the range values
@@ -466,36 +549,38 @@ typename FunctionMaxima<A, V>::iterator FunctionMaxima<A, V>::find(const A &a) c
 
 /**
  * Iteration is done in descending order according to the values.
- *
+ * Function is nothrow because begin() on std::multiset is nothrow.
  * @tparam A - type of the domain values
  * @tparam V - type of the range values
  * @return a read-only (constant) iterator that points to the first maxima element in FunctionMaxima.
  */
 template<typename A, typename V>
-typename FunctionMaxima<A, V>::mx_iterator FunctionMaxima<A, V>::mx_begin() const {
+typename FunctionMaxima<A, V>::mx_iterator FunctionMaxima<A, V>::mx_begin() const noexcept {
     return pImpl->mx_begin();
 }
 
 /**
  * Iteration is done in descending order according to the values.
+ * Function is nothrow because end() on std::multiset is nothrow.
  *
  * @tparam A - type of the domain values
  * @tparam V - type of the range values
  * @return a read-only (constant) iterator that points one past the last maxima element in FunctionMaxima.
  */
 template<typename A, typename V>
-typename FunctionMaxima<A, V>::mx_iterator FunctionMaxima<A, V>::mx_end() const {
+typename FunctionMaxima<A, V>::mx_iterator FunctionMaxima<A, V>::mx_end() const noexcept {
     return pImpl->mx_end();
 }
 
 /**
+ * Function is nothrow because size() on std::multiset is nothrow.
  *
  * @tparam A - type of the domain values
  * @tparam V - type of the range values
  * @return the size of the domain of FunctionMaxima.
  */
 template<typename A, typename V>
-typename FunctionMaxima<A, V>::size_type FunctionMaxima<A, V>::size() const {
+typename FunctionMaxima<A, V>::size_type FunctionMaxima<A, V>::size() const noexcept {
     return pImpl->size();
 }
 
