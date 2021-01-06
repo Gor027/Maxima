@@ -50,9 +50,9 @@ public:
     /**
      * Move constructors
      */
-    FunctionMaxima(FunctionMaxima<A, V> &&rhs) = default;
+    FunctionMaxima(FunctionMaxima<A, V> &&rhs) noexcept = default;
 
-    FunctionMaxima &operator=(FunctionMaxima &&rhs) = default;
+    FunctionMaxima &operator=(FunctionMaxima &&rhs) noexcept = default;
 
     /**
      * Destructor
@@ -80,7 +80,7 @@ public:
 private:
     class Impl;
 
-    std::unique_ptr <Impl> pImpl;
+    std::unique_ptr<Impl> pImpl;
 };
 
 /*********************************POINT_TYPE*********************************/
@@ -109,8 +109,8 @@ private:
 
     point_type(const A &argument) : argument(std::make_shared<A>(argument)), point(nullptr) {}
 
-    std::shared_ptr <A> argument;
-    std::shared_ptr <V> point;
+    std::shared_ptr<A> argument;
+    std::shared_ptr<V> point;
 };
 
 /*********************************FUNCTION_MAXIMA_IMPL*********************************/
@@ -262,9 +262,9 @@ private:
             surrounding.reserve(requiredSpace);
         }
 
-        std::vector <mx_iterator> success;
-        std::vector <mx_iterator> rollback;
-        std::vector <iterator> surrounding;
+        std::vector<mx_iterator> success;
+        std::vector<mx_iterator> rollback;
+        std::vector<iterator> surrounding;
     };
 
     /**
@@ -444,8 +444,8 @@ private:
         }
     };
 
-    std::multiset <point_type, pointSetCmp> pointSet;
-    std::multiset <point_type, maximaPointSetCmp> maximaPointSet;
+    std::multiset<point_type, pointSetCmp> pointSet;
+    std::multiset<point_type, maximaPointSetCmp> maximaPointSet;
 };
 
 /**
