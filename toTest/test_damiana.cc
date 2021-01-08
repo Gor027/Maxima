@@ -118,7 +118,9 @@ int cmpCount = 0;
 int jumpLength = 0;
 bool throwOnCopyConstruction = false;
 
-size_t sz = 20;
+int throwAbove = 0;
+int cmpLocalCount = 0;
+bool throwOnDemand = false;
 
 struct JumpThrower {
     using typ = std::mt19937::result_type;
@@ -144,6 +146,28 @@ struct JumpThrower {
     std::mt19937::result_type id;
 };
 
+struct AboveThrower {
+    using typ = std::mt19937::result_type;
+
+    explicit AboveThrower(typ _id) : id(_id) {}
+
+    AboveThrower(const AboveThrower &other) : id(other.id) {
+        if (throwOnCopyConstruction) {
+            throw SomeException("AboveThrower on Copy");
+        }
+    }
+
+    bool operator<(const AboveThrower &other) const {
+        if (++cmpLocalCount > throwAbove) {
+            throw SomeException("AboveThrower");
+        }
+
+        return id < other.id;
+    }
+
+    std::mt19937::result_type id;
+};
+
 template<typename A, typename V>
 struct same {
     bool operator()(const typename FunctionMaxima<A, V>::point_type &p,
@@ -157,6 +181,15 @@ template<>
 struct same<JumpThrower, JumpThrower> {
     bool operator()(const typename FunctionMaxima<JumpThrower, JumpThrower>::point_type &p,
                     const std::pair<JumpThrower, JumpThrower> &q) {
+        return !(p.arg().id < q.first.id) && !(q.first.id < p.arg().id) &&
+               !(p.value().id < q.second.id) && !(q.second.id < p.value().id);
+    }
+};
+
+template<>
+struct same<AboveThrower, AboveThrower> {
+    bool operator()(const typename FunctionMaxima<AboveThrower, AboveThrower>::point_type &p,
+                    const std::pair<AboveThrower, AboveThrower> &q) {
         return !(p.arg().id < q.first.id) && !(q.first.id < p.arg().id) &&
                !(p.value().id < q.second.id) && !(q.second.id < p.value().id);
     }
@@ -222,19 +255,32 @@ auto backupMaxima(const FunctionMaxima<A, V> &fun) {
     return backup;
 }
 
-struct XD {
-    XD() : t(sz) {
-        for (int &x : t) {
-            x = 42;
-        }
+#if TEST_NUM == 701
+
+int allocCount = 0;
+int throwOnAlloc = 0;
+
+void *operator new(size_t size) {
+    void *mem = malloc(size);
+
+    if (mem == nullptr) {
+        throw std::bad_alloc{};
     }
 
-    bool operator<(const XD &other) const {
-        return false;
+    if (++allocCount == throwOnAlloc) {
+        free(mem);
+        throw std::bad_alloc{};
     }
 
-    std::vector<int> t;
-};
+    return mem;
+}
+
+void operator delete(void *mem) noexcept {
+    free(mem);
+}
+
+#endif
+
 
 int main() {
 
@@ -518,8 +564,8 @@ int main() {
 #endif
 
 #if TEST_NUM == 202
-    std::vector<int> id = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12 };
-    std::vector<int> perm = { 1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3 };
+    std::vector<int> id = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+    std::vector<int> perm = {1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3};
 
     std::random_device rd;
     std::mt19937 g(rd());
@@ -551,7 +597,7 @@ int main() {
 
     std::random_device rd;
     std::mt19937 g(rd());
-    int licznik = 0;
+
     do {
         FunctionMaxima<int, int> fun;
 
@@ -643,17 +689,16 @@ int main() {
             int a = arg(eA);
             fun.erase(a);
 
-            auto it = points.lower_bound({ a, -1 });
+            auto it = points.lower_bound({a, -1});
             if (it != points.end() && it->first == a) {
                 points.erase(it);
             }
-        }
-        else {
+        } else {
             int a = arg(eA);
             int v = value(eV);
             fun.set_value(a, v);
 
-            auto it = points.lower_bound({ a, -1 });
+            auto it = points.lower_bound({a, -1});
             if (it != points.end() && it->first == a) {
                 points.erase(it);
             }
@@ -764,6 +809,209 @@ int main() {
     }
 #endif
 
+#if TEST_NUM == 208
+    constexpr int OPC = 100000;
+    constexpr int N = 20;
+    constexpr int M = 5;
+
+    std::default_random_engine eO(1489);
+    std::uniform_int_distribution<> op(1, 3);
+
+    std::default_random_engine eA(2137);
+    std::uniform_int_distribution<> arg(1, N);
+
+    std::default_random_engine eV(184271);
+    std::uniform_int_distribution<> value(1, M);
+
+    FunctionMaxima<int, int> fun;
+
+    std::set<std::pair<int, int> > points;
+
+    for (int i = 1; i <= OPC; i++) {
+        if (op(eO) == 1) {
+            int a = arg(eA);
+            fun.erase(a);
+
+            auto it = points.lower_bound({ a, -1 });
+            if (it != points.end() && it->first == a) {
+                points.erase(it);
+            }
+        }
+        else {
+            int a = arg(eA);
+            int v = value(eV);
+            fun.set_value(a, v);
+
+            auto it = points.lower_bound({ a, -1 });
+            if (it != points.end() && it->first == a) {
+                points.erase(it);
+            }
+
+            points.emplace(a, v);
+        }
+
+        IntMaximaSet mxPoints = findMaximas(points);
+
+        assert(fun_equal(fun, std::vector<std::pair<int, int>>(points.begin(), points.end())));
+        assert(fun_mx_equal(fun, std::vector<std::pair<int, int>>(mxPoints.begin(), mxPoints.end())));
+    }
+#endif
+
+#if TEST_NUM == 209
+    constexpr int OPC = 100000;
+    constexpr int N = 20;
+    constexpr int M = 5;
+
+    std::default_random_engine eO(1489);
+    std::uniform_int_distribution<> op(1, 2);
+
+    std::default_random_engine eA(2137);
+    std::uniform_int_distribution<> arg(1, N);
+
+    std::default_random_engine eV(184271);
+    std::uniform_int_distribution<> value(1, M);
+
+    FunctionMaxima<int, int> fun;
+
+    std::set<std::pair<int, int> > points;
+
+    for (int i = 1; i <= OPC; i++) {
+        if (op(eO) == 1) {
+            int a = arg(eA);
+            fun.erase(a);
+
+            auto it = points.lower_bound({ a, -1 });
+            if (it != points.end() && it->first == a) {
+                points.erase(it);
+            }
+        }
+        else {
+            int a = arg(eA);
+            int v = value(eV);
+            fun.set_value(a, v);
+
+            auto it = points.lower_bound({ a, -1 });
+            if (it != points.end() && it->first == a) {
+                points.erase(it);
+            }
+
+            points.emplace(a, v);
+        }
+
+        IntMaximaSet mxPoints = findMaximas(points);
+
+        assert(fun_equal(fun, std::vector<std::pair<int, int>>(points.begin(), points.end())));
+        assert(fun_mx_equal(fun, std::vector<std::pair<int, int>>(mxPoints.begin(), mxPoints.end())));
+    }
+#endif
+
+#if TEST_NUM == 210
+    constexpr int OPC = 100000;
+    constexpr int N = 7;
+    constexpr int M = 5;
+
+    std::default_random_engine eO(1489);
+    std::uniform_int_distribution<> op(1, 3);
+
+    std::default_random_engine eA(2137);
+    std::uniform_int_distribution<> arg(1, N);
+
+    std::default_random_engine eV(184271);
+    std::uniform_int_distribution<> value(1, M);
+
+    FunctionMaxima<int, int> fun;
+
+    std::set<std::pair<int, int> > points;
+
+    for (int i = 1; i <= OPC; i++) {
+        if (op(eO) == 1) {
+            int a = arg(eA);
+            fun.erase(a);
+
+            auto it = points.lower_bound({ a, -1 });
+            if (it != points.end() && it->first == a) {
+                points.erase(it);
+            }
+        }
+        else {
+            int a = arg(eA);
+            int v = value(eV);
+            fun.set_value(a, v);
+
+            auto it = points.lower_bound({ a, -1 });
+            if (it != points.end() && it->first == a) {
+                points.erase(it);
+            }
+
+            points.emplace(a, v);
+        }
+
+        IntMaximaSet mxPoints = findMaximas(points);
+
+        assert(fun_equal(fun, std::vector<std::pair<int, int>>(points.begin(), points.end())));
+        assert(fun_mx_equal(fun, std::vector<std::pair<int, int>>(mxPoints.begin(), mxPoints.end())));
+    }
+#endif
+
+#if TEST_NUM == 211
+    constexpr int N = 8;
+    constexpr int B = 4;
+
+    int power = 1;
+
+    for (int i = 1; i <= N; i++) {
+        power *= B;
+    }
+
+    std::vector<int> masks;
+
+    masks.reserve(power);
+
+    for (int mask = 0; mask < power; mask++) {
+        masks.push_back(mask);
+    }
+
+    std::random_device rd;
+    std::mt19937 g(rd());
+
+    std::shuffle(masks.begin(), masks.end(), g);
+
+    FunctionMaxima<int, int> fun;
+
+    std::vector<int> prevMask(N + 1);
+
+    for (auto mask : masks) {
+        int aux = mask;
+
+        std::set<std::pair<int, int> > points;
+
+        for (int i = N; i >= 1; i--) {
+            int digit = aux % B;
+            aux /= B;
+
+            if (digit != prevMask[i]) {
+                if (digit == 0) {
+                    fun.erase(i);
+                } else {
+                    fun.set_value(i, digit);
+                }
+            }
+
+            if (digit != 0) {
+                points.emplace(i, digit);
+            }
+
+            prevMask[i] = digit;
+        }
+
+        IntMaximaSet mxPoints = findMaximas(points);
+
+        assert(fun_equal(fun, std::vector<std::pair<int, int>>(points.begin(), points.end())));
+        assert(fun_mx_equal(fun, std::vector<std::pair<int, int>>(mxPoints.begin(), mxPoints.end())));
+    }
+
+#endif
+
     // Kopiowanie i przypisywanie.
 #if TEST_NUM == 301
     FunctionMaxima<BMA, BMV> fun;
@@ -871,13 +1119,10 @@ int main() {
                 fun.set_value(JumpThrower{u(e)}, JumpThrower{u(e)});
             }
             catch (const SomeException &) {
-                //std::cout << "jump " << jump << " cmpCount " << cmpCount << " i " << i << std::endl;
                 assert(fun_equal(fun, funBackup));
                 assert(fun_mx_equal(fun, maximaBackup));
             }
         }
-
-      //   std::cout << fun.size() << std::endl;
     }
 
 #endif
@@ -901,13 +1146,10 @@ int main() {
                 fun.set_value(JumpThrower{u(e)}, JumpThrower{u(e)});
             }
             catch (const SomeException &) {
-                //std::cout << "jump " << jump << " cmpCount " << cmpCount << " i " << i << std::endl;
                 assert(fun_equal(fun, funBackup));
                 assert(fun_mx_equal(fun, maximaBackup));
             }
         }
-
-        //std::cout << fun.size() << std::endl;
     }
 
 #endif
@@ -935,13 +1177,10 @@ int main() {
                 }
             }
             catch (const SomeException &) {
-                //std::cout << "jump " << jump << " cmpCount " << cmpCount << " i " << i << std::endl;
                 assert(fun_equal(fun, funBackup));
                 assert(fun_mx_equal(fun, maximaBackup));
             }
         }
-
-        std::cout << fun.size() << std::endl;
     }
 #endif
 
@@ -979,8 +1218,6 @@ int main() {
                 assert(fun_mx_equal(fun, maximaBackup));
             }
         }
-
-       //std::cout << fun.size() << std::endl;
     }
 #endif
 
@@ -1018,9 +1255,82 @@ int main() {
                 assert(fun_mx_equal(fun, maximaBackup));
             }
         }
-
-        std::cout << fun.size() << std::endl;
     }
+#endif
+
+#if TEST_NUM == 407
+    std::default_random_engine e(2137);
+    std::uniform_int_distribution<JumpThrower::typ> u(1, 7);
+
+    std::default_random_engine e2(1488);
+    std::uniform_int_distribution<JumpThrower::typ> u2(1, 3);
+
+    std::default_random_engine e3(119611);
+    std::uniform_int_distribution<JumpThrower::typ> u3(1, 5);
+
+    for (int jump = 1; jump <= 200; jump++) {
+        FunctionMaxima<JumpThrower, JumpThrower> fun;
+
+        jumpLength = jump;
+        cmpCount = 0;
+        throwOnCopyConstruction = false;
+
+        for (int i = 1; i <= 1000; i++) {
+            auto funBackup = backupFunction(fun);
+            auto maximaBackup = backupMaxima(fun);
+
+            try {
+                if (u2(e2) == 1) {
+                    fun.erase(JumpThrower{u(e)});
+                } else {
+                    fun.set_value(JumpThrower{u(e)}, JumpThrower{u3(e3)});
+                }
+            }
+            catch (const SomeException &) {
+                //std::cout << "jump " << jump << " cmpCount " << cmpCount << " i " << i << std::endl;
+                assert(fun_equal(fun, funBackup));
+                assert(fun_mx_equal(fun, maximaBackup));
+            }
+        }
+    }
+#endif
+
+#if TEST_NUM == 408
+    std::default_random_engine e(2137);
+    std::uniform_int_distribution<AboveThrower::typ> u(1, 5);
+
+    std::default_random_engine e2(1488);
+    std::uniform_int_distribution<AboveThrower::typ> u2(1, 3);
+
+    std::default_random_engine e3(119611);
+    std::uniform_int_distribution<AboveThrower::typ> u3(1, 5);
+
+    for (int above = 1; above <= 200; above++) {
+        FunctionMaxima<AboveThrower, AboveThrower> fun;
+
+        for (int i = 1; i <= 20000; i++) {
+            auto funBackup = backupFunction(fun);
+            auto maximaBackup = backupMaxima(fun);
+
+            if (i % 20 == 0) throwAbove = above;
+            else throwAbove = 300000;
+
+            cmpLocalCount = 0;
+
+            try {
+                if (u2(e2) == 1) {
+                    fun.erase(AboveThrower{u(e)});
+                } else {
+                    fun.set_value(AboveThrower{u(e)}, AboveThrower{u3(e3)});
+                }
+            }
+            catch (const SomeException &) {
+                assert(fun_equal(fun, funBackup));
+                assert(fun_mx_equal(fun, maximaBackup));
+            }
+        }
+    }
+
 #endif
 
     // Testy, ktore nie powinny sie kompilowac.
@@ -1079,55 +1389,42 @@ int main() {
 
 #endif
 
-    // Test na silna gwarancje operator=. Jeszcze nie gotowy.
+    // Test na silna gwarancje operator=.
 #if TEST_NUM == 701
-    FunctionMaxima<int, XD> fun, backup;
+    for (int allocNo = 1; allocNo <= 200; allocNo++) {
+        allocCount = 0;
+        throwOnAlloc = 0;
 
-    std::vector<std::pair<int, XD>> backupFunkcji;
-    std::vector<std::pair<int, XD>> backupMaksow;
+        FunctionMaxima<int, int> fun, fun2;
 
-    sz = 100000000;
+        fun.set_value(245, 1923);
+        fun.set_value(6542, 5473);
+        fun.set_value(17546, 8456);
 
-    int i = 0;
-    while (true) {
-        //sz *= 10;
-        std::cerr << sz << std::endl;
+        fun2.set_value(21, 54);
+        fun2.set_value(69, 91);
+        fun2.set_value(37, 42);
 
-        try {
-            backup = fun;
-            std::cerr << " no jestem" << std::endl;
-        } catch (const std::bad_alloc &) {
-            std::cerr << "catched bad alloc on operator=";
-            assert(!fun_equal(fun, backupFunkcji) || !fun_mx_equal(fun, backupMaksow));
-            break;
-        }
+        std::vector<std::pair<int, int>> funBackup = backupFunction(fun);
+        std::vector<std::pair<int, int>> maximaBackup = backupMaxima(fun);
 
-        try {
-            backupFunkcji = backupFunction(fun);
-            backupMaksow = backupMaxima(fun);
-        } catch (const std::bad_alloc &) {
-            std::cerr << "test sie zepsul" << std::endl;
-            break;
-        }
+        std::vector<std::pair<int, int>> funBackup2 = backupFunction(fun2);
+        std::vector<std::pair<int, int>> maximaBackup2 = backupMaxima(fun2);
+
+        allocCount = 0;
+        throwOnAlloc = allocNo;
 
         try {
-            backup = fun;
-            std::cerr << " no jestem" << std::endl;
-        } catch (const std::bad_alloc &) {
-            std::cerr << "catched bad alloc on operator=";
-            assert(!fun_equal(fun, backupFunkcji) || !fun_mx_equal(fun, backupMaksow));
-            break;
-        }
+            fun = fun2;
 
-        try {
-            fun.set_value(++i, {});
-            assert(!fun_equal(fun, backupFunkcji) || !fun_mx_equal(fun, backupMaksow));
+            throwOnAlloc = 0;
+            assert(fun_equal(fun, funBackup2));
+            assert(fun_mx_equal(fun, maximaBackup2));
         } catch (const std::bad_alloc &) {
-            std::cerr << "poszlo na dodaniu\n";
-            assert(fun_equal(fun, backupFunkcji) && fun_mx_equal(fun, backupMaksow));
-            break;
+            assert(fun_equal(fun, funBackup));
+            assert(fun_mx_equal(fun, maximaBackup));
         }
     }
-#endif
 
+#endif
 }
