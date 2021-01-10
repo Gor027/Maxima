@@ -1,12 +1,10 @@
 #ifndef MAXIMA_FUNCTION_MAXIMA_H
 #define MAXIMA_FUNCTION_MAXIMA_H
 
-#include <iostream>
 #include <map>
 #include <set>
 #include <vector>
 #include <memory>
-#include <iterator>
 
 /*********************************INVALID_ARG*********************************/
 

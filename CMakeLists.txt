@@ -11,10 +11,10 @@ add_executable(
         Maxima
         function_maxima.h
         #        toTest/example.cpp
-        #        toTest/maximaTest.cpp
-        #        toTest/wyjatkowy_int.cpp
+        toTest/maximaTest.cpp
+        #                toTest/wyjatkowy_int.cpp
         #        toTest/CursedAllocator.cpp
-        toTest/test_damiana.cc
+        #        toTest/test_damiana.cc
 )
 
 target_link_libraries(Maxima ${GTEST_LIBRARIES} pthread)
