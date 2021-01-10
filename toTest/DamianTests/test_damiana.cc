@@ -1,4 +1,4 @@
-#include "../function_maxima.h"
+#include "../../function_maxima.h"
 
 #include <cassert>
 #include <iostream>
@@ -671,10 +671,10 @@ int main() {
     constexpr int N = 100;
     constexpr int M = 7;
 
-    std::default_random_engine eO(1489);
+    std::default_random_engine eO(85768369);
     std::uniform_int_distribution<> op(1, 5);
 
-    std::default_random_engine eA(2137);
+    std::default_random_engine eA(38877271);
     std::uniform_int_distribution<> arg(1, N);
 
     std::default_random_engine eV(184271);
@@ -718,10 +718,10 @@ int main() {
     constexpr int N = 20;
     constexpr int M = 7;
 
-    std::default_random_engine eO(1489);
+    std::default_random_engine eO(85768369);
     std::uniform_int_distribution<> op(1, 5);
 
-    std::default_random_engine eA(2137);
+    std::default_random_engine eA(38877271);
     std::uniform_int_distribution<> arg(1, N);
 
     std::default_random_engine eV(184271);
@@ -766,10 +766,10 @@ int main() {
     constexpr int N = 20;
     constexpr int M = 5;
 
-    std::default_random_engine eO(1489);
+    std::default_random_engine eO(85768369);
     std::uniform_int_distribution<> op(1, 5);
 
-    std::default_random_engine eA(2137);
+    std::default_random_engine eA(38877271);
     std::uniform_int_distribution<> arg(1, N);
 
     std::default_random_engine eV(184271);
@@ -814,10 +814,10 @@ int main() {
     constexpr int N = 20;
     constexpr int M = 5;
 
-    std::default_random_engine eO(1489);
+    std::default_random_engine eO(85768369);
     std::uniform_int_distribution<> op(1, 3);
 
-    std::default_random_engine eA(2137);
+    std::default_random_engine eA(38877271);
     std::uniform_int_distribution<> arg(1, N);
 
     std::default_random_engine eV(184271);
@@ -862,10 +862,10 @@ int main() {
     constexpr int N = 20;
     constexpr int M = 5;
 
-    std::default_random_engine eO(1489);
+    std::default_random_engine eO(85768369);
     std::uniform_int_distribution<> op(1, 2);
 
-    std::default_random_engine eA(2137);
+    std::default_random_engine eA(38877271);
     std::uniform_int_distribution<> arg(1, N);
 
     std::default_random_engine eV(184271);
@@ -910,10 +910,10 @@ int main() {
     constexpr int N = 7;
     constexpr int M = 5;
 
-    std::default_random_engine eO(1489);
+    std::default_random_engine eO(85768369);
     std::uniform_int_distribution<> op(1, 3);
 
-    std::default_random_engine eA(2137);
+    std::default_random_engine eA(38877271);
     std::uniform_int_distribution<> arg(1, N);
 
     std::default_random_engine eV(184271);
@@ -1101,7 +1101,7 @@ int main() {
 
     // Mieszany rzucacz odstepowy :).
 #if TEST_NUM == 401
-    std::default_random_engine e(2137);
+    std::default_random_engine e(38877271);
     std::uniform_int_distribution<JumpThrower::typ> u(1, 5);
 
     for (int jump = 1; jump <= 200; jump++) {
@@ -1128,7 +1128,7 @@ int main() {
 #endif
 
 #if TEST_NUM == 402
-    std::default_random_engine e(2137);
+    std::default_random_engine e(38877271);
     std::uniform_int_distribution<JumpThrower::typ> u(1, 100);
 
     for (int jump = 1; jump <= 200; jump++) {
@@ -1155,7 +1155,7 @@ int main() {
 #endif
 
 #if TEST_NUM == 403
-    std::default_random_engine e(2137);
+    std::default_random_engine e(38877271);
     std::uniform_int_distribution<JumpThrower::typ> u(1, 5);
 
     for (int jump = 1; jump <= 200; jump++) {
@@ -1185,10 +1185,10 @@ int main() {
 #endif
 
 #if TEST_NUM == 404
-    std::default_random_engine e(2137);
+    std::default_random_engine e(38877271);
     std::uniform_int_distribution<JumpThrower::typ> u(1, 20);
 
-    std::default_random_engine e2(1488);
+    std::default_random_engine e2(62772949);
     std::uniform_int_distribution<JumpThrower::typ> u2(1, 4);
 
     std::default_random_engine e3(119611);
@@ -1213,7 +1213,6 @@ int main() {
                 }
             }
             catch (const SomeException &) {
-                //std::cout << "jump " << jump << " cmpCount " << cmpCount << " i " << i << std::endl;
                 assert(fun_equal(fun, funBackup));
                 assert(fun_mx_equal(fun, maximaBackup));
             }
@@ -1222,10 +1221,10 @@ int main() {
 #endif
 
 #if TEST_NUM == 405
-    std::default_random_engine e(2137);
+    std::default_random_engine e(38877271);
     std::uniform_int_distribution<JumpThrower::typ> u(1, 7);
 
-    std::default_random_engine e2(1488);
+    std::default_random_engine e2(62772949);
     std::uniform_int_distribution<JumpThrower::typ> u2(1, 3);
 
     std::default_random_engine e3(119611);
@@ -1250,7 +1249,42 @@ int main() {
                 }
             }
             catch (const SomeException &) {
-                //std::cout << "jump " << jump << " cmpCount " << cmpCount << " i " << i << std::endl;
+                assert(fun_equal(fun, funBackup));
+                assert(fun_mx_equal(fun, maximaBackup));
+            }
+        }
+    }
+#endif
+
+#if TEST_NUM == 406
+    std::default_random_engine e(38877271);
+    std::uniform_int_distribution<JumpThrower::typ> u(1, 7);
+
+    std::default_random_engine e2(62772949);
+    std::uniform_int_distribution<JumpThrower::typ> u2(1, 3);
+
+    std::default_random_engine e3(119611);
+    std::uniform_int_distribution<JumpThrower::typ> u3(1, 5);
+
+    for (int jump = 1; jump <= 200; jump++) {
+        FunctionMaxima<JumpThrower, JumpThrower> fun;
+
+        jumpLength = jump;
+        cmpCount = 0;
+        throwOnCopyConstruction = false;
+
+        for (int i = 1; i <= 1000; i++) {
+            auto funBackup = backupFunction(fun);
+            auto maximaBackup = backupMaxima(fun);
+
+            try {
+                if (u2(e2) == 1) {
+                    fun.erase(JumpThrower{u(e)});
+                } else {
+                    fun.set_value(JumpThrower{u(e)}, JumpThrower{u3(e3)});
+                }
+            }
+            catch (const SomeException &) {
                 assert(fun_equal(fun, funBackup));
                 assert(fun_mx_equal(fun, maximaBackup));
             }
@@ -1259,47 +1293,10 @@ int main() {
 #endif
 
 #if TEST_NUM == 407
-    std::default_random_engine e(2137);
-    std::uniform_int_distribution<JumpThrower::typ> u(1, 7);
-
-    std::default_random_engine e2(1488);
-    std::uniform_int_distribution<JumpThrower::typ> u2(1, 3);
-
-    std::default_random_engine e3(119611);
-    std::uniform_int_distribution<JumpThrower::typ> u3(1, 5);
-
-    for (int jump = 1; jump <= 200; jump++) {
-        FunctionMaxima<JumpThrower, JumpThrower> fun;
-
-        jumpLength = jump;
-        cmpCount = 0;
-        throwOnCopyConstruction = false;
-
-        for (int i = 1; i <= 1000; i++) {
-            auto funBackup = backupFunction(fun);
-            auto maximaBackup = backupMaxima(fun);
-
-            try {
-                if (u2(e2) == 1) {
-                    fun.erase(JumpThrower{u(e)});
-                } else {
-                    fun.set_value(JumpThrower{u(e)}, JumpThrower{u3(e3)});
-                }
-            }
-            catch (const SomeException &) {
-                //std::cout << "jump " << jump << " cmpCount " << cmpCount << " i " << i << std::endl;
-                assert(fun_equal(fun, funBackup));
-                assert(fun_mx_equal(fun, maximaBackup));
-            }
-        }
-    }
-#endif
-
-#if TEST_NUM == 408
-    std::default_random_engine e(2137);
+    std::default_random_engine e(38877271);
     std::uniform_int_distribution<AboveThrower::typ> u(1, 5);
 
-    std::default_random_engine e2(1488);
+    std::default_random_engine e2(62772949);
     std::uniform_int_distribution<AboveThrower::typ> u2(1, 3);
 
     std::default_random_engine e3(119611);

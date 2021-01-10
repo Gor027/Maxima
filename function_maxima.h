@@ -39,6 +39,10 @@ public:
      */
     FunctionMaxima(const FunctionMaxima<A, V> &rhs) : pImpl(std::make_unique<Impl>(*rhs.pImpl)) {}
 
+    /**
+     * make_unique provides exception safety by guaranteeing deletion of objects with dynamic lifetime
+     * on both normal exit and exit through exception.
+     */
     FunctionMaxima &operator=(const FunctionMaxima &rhs) {
         pImpl = std::make_unique<Impl>(*rhs.pImpl);
 

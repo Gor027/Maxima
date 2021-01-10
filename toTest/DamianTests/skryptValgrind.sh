@@ -4,7 +4,7 @@ to_pass=(101 102 103 104 105 106 201 202 203 204 205 206 207 208 209 210 211 301
 to_fail=(501)
 
 compiler_flags="g++ -Og -g -Wall -Wextra -std=c++17 "
-valgrind_command="valgrind --error-exitcode=1 --errors-for-leak-kinds=definite --leak-check=full --quiet "
+valgrind_command="valgrind --error-exitcode=1 --leak-check=full --show-leak-kinds=all --errors-for-leak-kinds=all --track-origins=yes --run-cxx-freeres=yes "
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 NOCOLOR='\033[0m'
