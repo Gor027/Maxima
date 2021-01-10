@@ -163,11 +163,6 @@ public:
                 storage.success.push_back(maximaPointSet.find(*storage.surrounding[prevMiddle]));
             }
         }
-        catch (std::exception &e) {
-            makeRollback(insertion, storage);
-
-            throw e;
-        }
         catch (...) {
             makeRollback(insertion, storage);
 
@@ -196,11 +191,6 @@ public:
             if (storage.surrounding[prevMiddle] != pointSet.end()) {
                 storage.success.push_back(maximaPointSet.find(*storage.surrounding[prevMiddle]));
             }
-        }
-        catch (std::exception &e) {
-            makeRollback(false, storage);
-
-            throw e;
         }
         catch (...) {
             makeRollback(false, storage);
@@ -275,16 +265,14 @@ private:
      * @param it - iterator
      * @return   - it-- (in terms of iterator arithmetic) or pointSet.end() if it-- is out of set's range.
      */
-    iterator moveItLeft(const iterator it) const noexcept {
-        auto tempIt = it;
-
+    iterator moveItLeft(iterator it) const noexcept {
         if (it != pointSet.end() && it != pointSet.begin()) {
-            tempIt--;
+            it--;
         } else {
-            tempIt = pointSet.end();
+            it = pointSet.end();
         }
 
-        return tempIt;
+        return it;
     }
 
     /**
@@ -293,16 +281,14 @@ private:
      * @param it - iterator
      * @return   - it++ (in terms of iterator arithmetic) or pointSet.end() if it++ is out of set's range.
      */
-    iterator moveItRight(const iterator it) const noexcept {
-        auto tempIt = it;
-
+    iterator moveItRight(iterator it) const noexcept {
         if (it != pointSet.end()) {
-            tempIt++;
+            it++;
         } else {
-            tempIt = pointSet.end();
+            it = pointSet.end();
         }
 
-        return tempIt;
+        return it;
     }
 
     /**
